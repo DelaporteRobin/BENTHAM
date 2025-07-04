@@ -25,7 +25,7 @@ class BenthamUSER:
 	def save_user_data_function(self):
 		self.display_message("Trying to save user data", "notification")
 		try:
-			with open("data/userData.json", "w") as save_file:
+			with open("data/userData.json", "w", encoding="utf-8") as save_file:
 				json.dump(self.user_data, save_file, indent=4)
 		except Exception as e:
 			self.display_message("Impossible to save user data", "error")
@@ -46,8 +46,8 @@ class BenthamUSER:
 
 	def save_scrapping_function(self):
 		try:
-			with open("data/linkedin_scrapping.json", "w") as save_file:
-				json.dump(self.linkedin_scrapping_table, save_file, indent=4)
+			with open("data/linkedin_scrapping.json", "w",encoding="utf-8") as save_file:
+				json.dump(self.scrapping_data, save_file, indent=4)
 		except Exception as e:
 			self.call_from_thread(self.display_message, "Impossible to save scrapping data in file...", "error")
 			self.call_from_thread(self.display_message, traceback.format_exc(), "error")
@@ -62,7 +62,10 @@ class BenthamUSER:
 		else:
 			try:
 				with open("data/linkedin_scrapping.json", "r") as scrapping_file:
-					self.linkedin_scrapping_table = json.load(scrapping_file)
+					self.scrapping_data = json.load(scrapping_file)
+
+				self.linkedin_scrapping_table = self.scrapping_data["LinkedinScrapping"]
+				self.linkedin_post_checked = self.scrapping_data["LinkedinCheckedPost"]
 			except Exception as e:
 				#self.call_from_thread(self.display_message, "Impossible to load scrapping data from file", "error")
 				#self.call_from_thread(self.display_message, traceback.format_exc(), "error", False)

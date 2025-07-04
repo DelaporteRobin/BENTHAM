@@ -17,3 +17,10 @@ Button {
 	margin-right:1;
 	margin-left:1;
 }
+#vertical_linkedin_container {
+	border:solid red;
+	height:1fr;
+}
+#markdown_linkedin_post_content {
+	border:solid green;
+}

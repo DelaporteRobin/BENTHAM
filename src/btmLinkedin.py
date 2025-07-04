@@ -7,6 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import WebDriverException
 
 from textual.app import App, ComposeResult
 from textual.widgets import Sparkline, Tree, ProgressBar, Input, RadioSet, MarkdownViewer, RadioButton, Log, Rule, Collapsible, Checkbox, SelectionList, LoadingIndicator, DataTable, Sparkline, DirectoryTree, Rule, Label, Button, Static, ListView, ListItem, OptionList, Header, SelectionList, Footer, Markdown, TabbedContent, TabPane, Input, DirectoryTree, Select, Tabs
@@ -123,7 +124,19 @@ class BenthamLINKEDIN:
 				chrome_options.add_argument("--window-size=1920,1080")
 				#init the driver
 				self.driver_linkedin_scrapping = webdriver.Chrome(options = chrome_options)
-				self.driver_linkedin_scrapping.get("https://linkedin.com")
+				connected=False
+				for i in range(50):
+					try:
+						self.driver_linkedin_scrapping.get("https://linkedin.com")
+					except WebDriverException as e:
+						self.call_from_thread(self.display_message, "Impossible to access linkedin, please connect to internet", "error")
+						sleep(5)
+					else:
+						connected=True
+						break
+				if connected==False:
+					self.call_from_thread(self.display_message, "Impossible to access linkedin, program terminated", "error")
+					exit()
 				#get cookies
 				cookies = self.load_linkedin_cookies_function()
 				if type(cookies)==list:
@@ -167,8 +180,8 @@ class BenthamLINKEDIN:
 				self.scrapping_loop_function()
 
 		except Exception as e:
-			self.call_from_thread(self.display_message, "Error happened during thread", "error")
-			self.call_from_thread(self.display_message, traceback.format_exc())
+			self.call_from_thread(self.display_message, f"Error happened during thread\n{traceback.format_exc()}", "error")
+			#self.call_from_thread(self.display_message, traceback.format_exc())
 
 		else:
 			self.call_from_thread(self.display_message, "thread terminated", "success")
@@ -190,7 +203,13 @@ class BenthamLINKEDIN:
 					page_displaymode_option_list.append(children)
 					#self.call_from_thread(self.display_message, "option detected : %s"%children.text, "message")
 			try:
-				page_displaymode_option_list[self.select_linkedin_displaymode.value].click()
+				if "LinkedinDisplayMode" in self.user_data:
+					value = self.user_data["LinkedinDisplayMode"]
+				else:
+					self.call_from_thread(self.display_message, "Linkedin display mode isn't saved in user data!\nDefault value set to 0")
+					value=0
+				page_displaymode_option_list[value].click()
+				#page_displaymode_option_list[self.select_linkedin_displaymode.value].click()
 			except Exception as e:
 				self.call_from_thread(self.display_message, "Impossible to click on option to change display mode","error")
 				self.call_from_thread(self.display_message, traceback.format_exc(), "error", False)
@@ -230,9 +249,9 @@ class BenthamLINKEDIN:
 					self.display_message("Driver killed successfully", "success")
 				return
 
-			self.call_from_thread(self.display_message, "="*250, "notification")
+			self.call_from_thread(self.display_message, "="*90, "notification")
 			self.call_from_thread(self.display_message, "New loop start...", "notification")
-			self.call_from_thread(self.display_message, "="*250, "notification")
+			self.call_from_thread(self.display_message, "="*90, "notification")
 			#refresh the page
 			#self.driver_linkedin_scrapping.refresh()
 			#scroll to bottom of the page
@@ -259,13 +278,12 @@ class BenthamLINKEDIN:
 				#CHECK IF THE POST HAS ALREADY BEEN CHECKED
 				post_id = post.get_attribute("data-urn") or post.text[:50]
 				if post_id in self.linkedin_post_checked:
-					self.call_from_thread(self.display_message, "Already checked | Post skipped → %s"%post_id, "message")
+					#self.call_from_thread(self.display_message, "Already checked | Post skipped → %s"%post_id, "message")
 					continue
 				else:
 					self.linkedin_post_checked.append(post_id)
-				self.call_from_thread(self.display_message, "\n\n", "message",False)
-				self.call_from_thread(self.display_message,"DISPLAY POST CONTENT","notification")
 				
+				#self.call_from_thread(self.display_message,"Display post content","notification")
 				self.call_from_thread(self.display_message, "POST ID → %s"%post_id,"notification")
 				#self.call_from_thread(self.display_message, str(post))
 				#post_title = post.find_elements(By.CSS_SELECTOR, "span[aria-hidden='true']")[0]
@@ -281,6 +299,15 @@ class BenthamLINKEDIN:
 					post_text_list.append(element.text)
 				#join post_text_list
 				post_text = "\n".join(post_text_list)
+
+				#CHECK FOR CONTENT IN POST
+				if self.check_post_content_function(post_text)==False:
+					self.call_from_thread(self.display_message, "No keyword found in post → Skipped", "notification")
+					continue
+				elif self.check_post_content_function(post_text)==True:
+					self.call_from_thread(self.display_message, "Keyword detected in post", "success")
+				else:
+					self.call_from_thread(self.display_message, "Impossible to check for keywords in post", "warning")
 				#GET SHARED POST CONTENT
 				post_shared = post.find_elements(By.CSS_SELECTOR, "div.feed-shared-update-v2__update-content-wrapper")
 				post_shared_text = None
@@ -292,10 +319,9 @@ class BenthamLINKEDIN:
 						post_shared_text[i] = post_shared_text[i].text
 
 					post_text_shared_combined = "\n".join(post_shared_text)
-					self.call_from_thread(self.display_message, "SHARED CONTENT\n%s"%post_shared_text[i], "notification")
+					self.call_from_thread(self.display_message, "Shared content\n%s"%post_shared_text[i], "notification")
 
 				#GET THE LINK OF THE POST
-
 				try:
 					post_button = WebDriverWait(post, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'button.feed-shared-control-menu__trigger')))
 					ActionChains(self.driver_linkedin_scrapping).move_to_element(post_button).perform()
@@ -305,12 +331,12 @@ class BenthamLINKEDIN:
 					menu_option = WebDriverWait(self.driver_linkedin_scrapping, 8).until(EC.presence_of_all_elements_located((By.XPATH, "//div[contains(@class, 'feed-shared-control-menu__content')]//div[@role='button']")))			
 					menu_option[1].click()
 					post_link = pyperclip.paste()
-					self.call_from_thread(self.display_message, "POST LINK : %s"%post_link,"success")
+					self.call_from_thread(self.display_message, "Post link : %s"%post_link,"success")
 				except Exception as e:
 					self.call_from_thread(self.display_message, "Impossible to get post link", "error")
 					self.call_from_thread(self.display_message, traceback.format_exc(), "error")
 					self.call_from_thread(self.display_message, "Posting date detection skipped", "error")
-					pass
+					
 				else:
 					#GET THE POSTING DATE
 					post_date = self.get_linkedin_post_date_function(post_link)
@@ -320,33 +346,42 @@ class BenthamLINKEDIN:
 						post_date_converted = datetime.strptime((post_date.replace(" (UTC)", "")),"%a, %d %b %Y %H:%M:%S")
 						delta = (datetime.now()-post_date_converted).days
 						self.call_from_thread(self.display_message, "Converted date : %s"%str(post_date_converted), "success")
-						self.call_from_thread(self.display_message, "DELTA : %s"%str(delta), "success")
+						self.call_from_thread(self.display_message, "Delta : %s"%str(delta), "success")
 						#check if the delta in days is contained in interval
-						if (delta >= int(self.input_min_day_value.value)) and (delta <= int(self.input_max_day_value.value)):
-							self.call_from_thread(self.display_message, "Interval value are matching...","message")
-							#create a unique identifier for this post
-							post_timestamp = int(post_date_converted.timestamp() * 1000)
-							self.call_from_thread(self.display_message, "Unique timestamp created for this post : %s"%post_timestamp)
-							#check if the timestamp is not already in table
-							if post_timestamp not in self.linkedin_scrapping_table:
-								#create the data dictionnary for this post
-								post_data_table = {
-									"postIdentifier":post_timestamp,
-									"postDate":str(post_date_converted),
-									"postAuthor":post_author.text,
-									"postContent":post_text,
-								}
-								if post_shared_text != None:
-									post_data_table["postSharedContent"] = post_shared_text
-								#add the post in the table
-								self.linkedin_scrapping_table[post_timestamp] = post_data_table
-								#call saving function
-								self.save_scrapping_function()
+						if ("MinDayValue" in self.user_data) and ("MaxDayValue" in self.user_data):
+							if (delta >= int(self.user_data["MinDayValue"])) and (delta <= int(self.user_data["MaxDayValue"])):
+								self.call_from_thread(self.display_message, "Interval value are matching...","message")
+								#create a unique identifier for this post
+								post_timestamp = int(post_date_converted.timestamp() * 1000)
+								self.call_from_thread(self.display_message, "Unique timestamp created for this post : %s"%post_timestamp)
+								#check if the timestamp is not already in table
+								if post_timestamp not in self.linkedin_scrapping_table:
+									#create the data dictionnary for this post
+									post_data_table = {
+										"postIdentifier":post_timestamp,
+										"postDate":str(post_date_converted),
+										"postAuthor":post_author.text,
+										"postContent":post_text,
+									}
+									if post_shared_text != None:
+										post_data_table["postSharedContent"] = post_shared_text
+									#add the post in the table
+									self.linkedin_scrapping_table[post_id] = post_data_table
+									#call saving function
+									#self.save_scrapping_function()
+								else:
+									self.call_from_thread(self.display_message, "POST ALREADY DETECTED IN SCRAPPING DATA → SKIPPED", "error")
 							else:
-								self.call_from_thread(self.display_message, "POST ALREADY DETECTED IN SCRAPPING DATA → SKIPPED", "error")
+								self.call_from_thread(self.display_message, "Interval values are not matching", "warning")
+								self.call_from_thread(self.display_message, "Skipping saving", "warning")
 						else:
-							self.call_from_thread(self.display_message, "Interval values are not matching", "warning")
-							self.call_from_thread(self.display_message, "Skipping saving", "warning")
+							self.call_from_thread(self.display_message, "Missing settings to define if post match time range", "error")
+				self.scrapping_data = {
+					"LinkedinScrapping":self.linkedin_scrapping_table,
+					"LinkedinCheckedPost":self.linkedin_post_checked
+				}
+				self.save_scrapping_function()
+				self.call_from_thread(self.display_message, "\n", "message",False)
 				"""
 				for post_text in list_post_text:
 					self.call_from_thread(self.display_message, str(post_text.text))
@@ -363,6 +398,26 @@ class BenthamLINKEDIN:
 		return
 
 
+	def check_post_content_function(self, content):
+		#get the keywords to check in settings
+		self.call_from_thread(self.display_message, content)
+		if ("KeywordRequired") not in self.user_data:
+			self.call_from_thread(self.display_message, "Impossible to check for keywords","warning")
+			return None
+		checking_status=True
+
+		for keyword_list in self.user_data["KeywordRequired"]:
+			keyword_list_status=False
+			for keyword in keyword_list:
+				if (keyword.upper() in content) or (keyword.lower() in content) or (keyword.capitalize() in content):
+					self.call_from_thread(self.display_message, f"  Keyword detected : {keyword}","success")
+					keyword_list_status=True
+				else:
+					self.call_from_thread(self.display_message, f'  Keyword not detected : {keyword}', "message")
+			if keyword_list_status!=True:
+				checking_status=False
+
+		return checking_status
 
 
 	def get_linkedin_post_date_function(self,url):
@@ -397,6 +452,7 @@ class BenthamLINKEDIN:
 
 
 	def load_linkedin_cookies_function(self):
+		self.call_from_thread(self.display_message, os.getcwd(), "message")
 		if os.path.isfile(os.path.join(os.getcwd(), "data/linkedin_cookies.json"))==False:
 			self.call_from_thread(self.display_message, "Cookie not saved in file", "error")
 			return None

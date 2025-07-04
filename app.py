@@ -37,7 +37,9 @@ from rich.traceback import install
 from src.btmLinkedin import BenthamLINKEDIN
 from src.btmUser import BenthamUSER
 from src.btmGui import BenthamGUI
+from src.btmUtility import BenthamUTILITY
 
+import re
 import multiprocessing as mp 
 import threading
 import sys
@@ -45,7 +47,7 @@ import os
 import traceback
 
 
-class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI):
+class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY):
 
 	CSS_PATH = ["styles/layout.tcss"]
 	BINDINGS = [
@@ -75,8 +77,14 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI):
 		self.linkedin_cookies = {}
 		self.linkedin_scrapping_table = {}
 		self.linkedin_post_checked = []
+		self.scrapping_data = {}
+		#keyword list for linkedin parsing
+		self.list_keyword_required = []
+		self.list_keyword_pertinent = []
+		
 		#thread init variable
 		self.stop_thread_linkedin = False
+		self.lock_log_file = threading.Lock()
 
 	def compose(self) -> ComposeResult:
 		yield Header(show_clock=True)
@@ -113,12 +121,16 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI):
 					self.checkbox_startup_mode = Checkbox("Start scrapping at startup", value=False, id="checkbox_startup_mode")
 					yield self.checkbox_startup_mode
 
+				#keyword that are all required in the post
+				self.input_keyword_required = Input(placeholder="All required keywords", id="input_keyword_required")
+				self.input_keyword_pertinent = Input(placeholder="All keywords that might concern you",id="input_keyword_pertinent")
 
-
+				yield self.input_keyword_required
+				yield self.input_keyword_pertinent
 				with Horizontal(id = "horizontal_column_scrapping"):
 					yield Button("START SCRAPPING", id="button_scrapping_start")
 					yield Button("STOP SCRAPPING", id="button_scrapping_stop")
-
+				yield Button("remove children", id="button_remove_children")
 
 
 			with VerticalScroll(id = "vertical_column_right"):
@@ -154,8 +166,28 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI):
 		label.styles.color = self.theme_variables[color]
 		#display also a rich message for suspended app
 		self.console.print("%s - [%s]%s[/%s] → %s"%(str(datetime.now()),self.theme_variables[color],severity.upper(),self.theme_variables[color],msg))
+		#save the line in a file
 
+		#lock the file
+		try:
+			self.lock_log_file.acquire()
+			#write log line
+			with open("data/btmLog.log", "a", encoding="utf-8") as log_file:
+				log_file.write("%s\n"%str(format_msg))
+			#release the lock
+			self.lock_log_file.release()
+		except Exception as e:
+			pass
+			#self.listview_log.append(ListItem(Label(str(traceback.format_exc()))))
 		#update the log listview
+		#check for the number of items already contained in the list
+		#limit is set to 150?
+
+		
+		if len(self.listview_log.children)==150:
+			self.listview_log.pop(0)
+		
+		#add the new item to the listview :)
 		self.listview_log.append(ListItem(label))
 		self.listview_log.scroll_end()
 
@@ -170,6 +202,9 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI):
 		self.load_scrapping_data_function()
 		#update the interface
 		self.update_lobby_informations()
+		#launch the thread to read scrapping live
+		self.thread_display_scrapping = threading.Thread(target=self.display_scrapping_function, args=(), daemon=True)
+		self.thread_display_scrapping.start()
 
 	def on_checkbox_changed(self, event:Checkbox.Changed) -> None:
 		if event.checkbox.id == "checkbox_startup_mode":
@@ -177,7 +212,51 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI):
 				#create the task for the autorun
 				self.create_startup_task_function()
 
+	def on_select_changed(self, event:Select.Changed) -> None:
+		if event.select.id == "select_linkedin_displaymode":
+			#save the value in user settings dictionnary
+			self.user_data["LinkedinDisplayMode"] = self.select_linkedin_displaymode.value
+			self.save_user_data_function()
 
+	def on_input_submitted(self, event:Input.Submitted) -> None:
+		if event.input.id == "input_min_day_value":
+			self.user_data["MinDayValue"] = self.input_min_day_value.value
+			self.save_user_data_function() 
+		if event.input.id == "input_max_day_value":
+			self.user_data["MaxDayValue"] = self.input_max_day_value.value
+			self.save_user_data_function()
+		if (event.input.id == "input_keyword_required") or (event.input.id == "input_keyword_pertinent"):
+			#get the content of the input
+			#split the content by | 
+			table_keyword_required = []
+			splited_keyword_required = smatches = re.findall(r'\[([^\]]+)\]', self.input_keyword_required.value)
+			for i in range(len(splited_keyword_required)):
+				parsed_keyword_list = []
+				splited_element = splited_keyword_required[i].split(";")
+				for element in splited_element:
+					if self.check_letter_function(element)==True:
+						parsed_keyword_list.append(element)
+				table_keyword_required.append(parsed_keyword_list)
+			#splited_keyword_pertinent = matches = re.findall(r'\[([^\]]+)\]', text)
+			#final_keyword_required = []
+			#final_keyword_pertinent = []
+			#check if each element of the list contain letters
+			"""
+			for i in range(len(splited_keyword_required)):
+				if self.check_letter_function(splited_keyword_required[i])==True:
+					final_keyword_required.append(splited_keyword_required[i])
+			for i in range(len(splited_keyword_pertinent)):
+				if self.check_letter_function(splited_keyword_pertinent[i])==True:
+					final_keyword_pertinent.append(splited_keyword_pertinent[i])
+			self.user_data["KeywordRequired"]=final_keyword_required
+			self.user_data["KeywordPertinent"]=final_keyword_pertinent
+			"""
+
+			#[hiring;hire;recrute;recrutement][modélisation;modeling;lookdev;lighting;texturing;surfacing;rendering]
+			self.user_data["KeywordRequired"]=table_keyword_required
+			#save list in user data
+			self.save_user_data_function()
+		
 	def on_button_pressed(self, event:Button.Pressed) -> None:
 		if event.button.id == "button_get_cookies":
 			with self.suspend():
@@ -194,19 +273,18 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI):
 			
 			try:
 				self.stop_thread_linkedin=True
-				self.thread_scrapping = threading.Thread(target=self.thread_linkedin_scrapper,args=())
+				self.thread_scrapping = threading.Thread(target=self.thread_linkedin_scrapper,args=(), daemon=True)
 				self.thread_scrapping.start()
 				self.display_message("Thread started", "success")
 			except Exception as e:
 				self.display_message("Impossible to launch thread", "error")
 				self.display_message(traceback.format_exc(), "error")
 
-	
-
 		if event.button.id == "button_scrapping_stop":
-			#change the value of the thread variable
+			#change the value of the thread theme_variables
 			self.stop_thread_linkedin = False
 			#try to terminate the driver
+
 
 		
 
