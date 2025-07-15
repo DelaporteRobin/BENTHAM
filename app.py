@@ -130,7 +130,7 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 				with Horizontal(id = "horizontal_column_scrapping"):
 					yield Button("START SCRAPPING", id="button_scrapping_start")
 					yield Button("STOP SCRAPPING", id="button_scrapping_stop")
-				yield Button("remove children", id="button_remove_children")
+				#yield Button("remove children", id="button_remove_children")
 
 
 			with VerticalScroll(id = "vertical_column_right"):

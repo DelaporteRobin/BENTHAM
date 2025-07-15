@@ -134,6 +134,7 @@ class BenthamLINKEDIN:
 					else:
 						connected=True
 						break
+						
 				if connected==False:
 					self.call_from_thread(self.display_message, "Impossible to access linkedin, program terminated", "error")
 					exit()

@@ -81,6 +81,7 @@ class BenthamGUI:
 
 		self.display_message("Updating informations done...", "success")
 
+	#show saved post from linkedin scrapping in the main interface
 	def display_scrapping_function(self):
 		try:
 			self.list_mounted_post_size = 0
@@ -90,16 +91,16 @@ class BenthamGUI:
 				with open("data/linkedin_scrapping.json", "r") as scrapping_file:
 					scrapping_content = json.load(scrapping_file)
 				table_post = scrapping_content["LinkedinScrapping"]
-
+				"""
 				if len(list(table_post.keys())) != self.list_mounted_post_size:
-					for i in range(len(list(table_post.keys()))):
-					"""
+					
+					
 					for post_id, post_data in table_post.items():
 						post_tui = Bentham_Modal_PostFormatting(post_id,post_data)
 
 						#mount the formatted post tui in the vertical scroll contained
 						self.call_from_thread(self.vertical_post_container.mount,post_tui)
-					"""
+				"""
 
 				sleep(5)
 
