@@ -84,7 +84,7 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 		
 		#thread init variable
 		self.stop_thread_linkedin = False
-		self.lock_log_file = threading.Lock()
+		#self.lock_log_file = threading.Lock()
 
 	def compose(self) -> ComposeResult:
 		yield Header(show_clock=True)
@@ -94,10 +94,13 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 		right column → linkedin posts
 		"""
 		with Horizontal(id = "horizontal_main_container"):
+			
 			with SlideContainer(id = "slidecontainer_right", slide_direction="right", dock_position="right", fade=True, duration=0.5, start_open=False):
 				self.listview_log = ListView(id = "listview_log")
 				yield self.listview_log
 				self.listview_log.border_title = "Application log"
+			
+			
 			with VerticalScroll(id = "vertical_column_left"):
 				with Collapsible(title = "Linkedin authentification", id="collapsible_authentification"):
 					self.input_linkedin_username = Input(placeholder="Linkedin mail or phone", id="input_linkedin_username")
@@ -190,21 +193,28 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 		#add the new item to the listview :)
 		self.listview_log.append(ListItem(label))
 		self.listview_log.scroll_end()
+		
 
 	#BINDINGS FUNCTION
+	
 	def action_binding_logs(self) -> None:
 		self.query_one("#slidecontainer_right").toggle()
+	
 
 	def on_mount(self) -> None:
 		self.display_message("Welcome in Bentham", "notification")
+		
+		
+
 		#load user data
 		self.load_user_data_function()
 		self.load_scrapping_data_function()
 		#update the interface
 		self.update_lobby_informations()
 		#launch the thread to read scrapping live
-		self.thread_display_scrapping = threading.Thread(target=self.display_scrapping_function, args=(), daemon=True)
-		self.thread_display_scrapping.start()
+		#self.thread_display_scrapping = threading.Thread(target=self.display_scrapping_function, args=(), daemon=True)
+		#self.thread_display_scrapping.start()
+		
 
 	def on_checkbox_changed(self, event:Checkbox.Changed) -> None:
 		if event.checkbox.id == "checkbox_startup_mode":
@@ -270,7 +280,6 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 
 		if event.button.id == "button_scrapping_start":
 			#start a threading event
-			
 			try:
 				self.stop_thread_linkedin=True
 				self.thread_scrapping = threading.Thread(target=self.thread_linkedin_scrapper,args=(), daemon=True)
