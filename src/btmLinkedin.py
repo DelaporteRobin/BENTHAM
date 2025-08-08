@@ -101,8 +101,6 @@ class BenthamLINKEDIN:
 				self.display_message("Linkedin cookies saved successfully", "success")
 				return True
 
-
-
 	def thread_linkedin_scrapper(self):
 		try:
 			"""
@@ -276,6 +274,9 @@ class BenthamLINKEDIN:
 					else:
 						self.display_message("Driver killed successfully", "success")
 					return
+
+				self.call_from_thread(self.display_message, " ")
+				self.call_from_thread(self.display_message, "Checking new post content", "notification")
 				#CHECK IF THE POST HAS ALREADY BEEN CHECKED
 				post_id = post.get_attribute("data-urn") or post.text[:50]
 				if post_id in self.linkedin_post_checked:
@@ -363,11 +364,13 @@ class BenthamLINKEDIN:
 										"postDate":str(post_date_converted),
 										"postAuthor":post_author.text,
 										"postContent":post_text,
+										"postLink":post_link
 									}
 									if post_shared_text != None:
 										post_data_table["postSharedContent"] = post_shared_text
 									#add the post in the table
 									self.linkedin_scrapping_table[post_id] = post_data_table
+									self.call_from_thread(self.display_message, "Post saved in scrapping dictionnary\n", "success")
 									#call saving function
 									#self.save_scrapping_function()
 								else:
@@ -405,18 +408,16 @@ class BenthamLINKEDIN:
 		if ("KeywordRequired") not in self.user_data:
 			self.call_from_thread(self.display_message, "Impossible to check for keywords","warning")
 			return None
-		checking_status=True
 
+		checking_status=False
 		for keyword_list in self.user_data["KeywordRequired"]:
-			keyword_list_status=False
 			for keyword in keyword_list:
 				if (keyword.upper() in content) or (keyword.lower() in content) or (keyword.capitalize() in content):
 					self.call_from_thread(self.display_message, f"  Keyword detected : {keyword}","success")
-					keyword_list_status=True
+					checking_status=True
 				else:
 					self.call_from_thread(self.display_message, f'  Keyword not detected : {keyword}', "message")
-			if keyword_list_status!=True:
-				checking_status=False
+
 
 		return checking_status
 

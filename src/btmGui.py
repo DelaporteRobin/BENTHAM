@@ -51,8 +51,12 @@ class Bentham_Modal_PostFormatting(Static):
 	def compose(self) -> ComposeResult:
 		with Collapsible(title = '%s  -  %s'%(self.post_data["postDate"],self.post_data["postAuthor"]), id=f"collapsible_linkedin_post_{self.post_data["postIdentifier"]}"):
 
+			#content of the post
 			self.markdown_linkedin_post_content = Markdown(id = "markdown_linkedin_post_content")
 			yield self.markdown_linkedin_post_content
+
+			#link of the post
+			yield Label(f"To see the post on linkedin → {self.post_data["postLink"]}")
 
 	def on_mount(self) -> None:
 		self.markdown_linkedin_post_content.update(self.post_data["postContent"])
@@ -87,22 +91,22 @@ class BenthamGUI:
 			self.list_mounted_post_size = 0
 			self.call_from_thread(self.display_message, "Starting to read saved linkedin posts...", "notification")
 			#GET THE CONTENT OF THE SCRAPPING LOG IF IT EXISTS
-			for i in range(50):
-				with open("data/linkedin_scrapping.json", "r") as scrapping_file:
-					scrapping_content = json.load(scrapping_file)
-				table_post = scrapping_content["LinkedinScrapping"]
-				"""
-				if len(list(table_post.keys())) != self.list_mounted_post_size:
-					
-					
-					for post_id, post_data in table_post.items():
-						post_tui = Bentham_Modal_PostFormatting(post_id,post_data)
+			#for i in range(50):
+			with open("data/linkedin_scrapping.json", "r") as scrapping_file:
+				scrapping_content = json.load(scrapping_file)
+			table_post = scrapping_content["LinkedinScrapping"]
+			
+			if len(list(table_post.keys())) != self.list_mounted_post_size:
+				
+				
+				for post_id, post_data in table_post.items():
+					post_tui = Bentham_Modal_PostFormatting(post_id,post_data)
 
-						#mount the formatted post tui in the vertical scroll contained
-						self.call_from_thread(self.vertical_post_container.mount,post_tui)
-				"""
+					#mount the formatted post tui in the vertical scroll contained
+					self.call_from_thread(self.vertical_post_container.mount,post_tui)
+			
 
-				sleep(5)
+
 
 			self.call_from_thread(self.display_message, self.vertical_post_container.children)
 		except Exception as e:
