@@ -3,6 +3,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By 
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
@@ -55,13 +56,18 @@ class BenthamLINKEDIN:
 		self.display_message("Trying to get linkedin cookies...")
 		username = self.input_linkedin_username.value
 		password = self.input_linkedin_password.value 
+		browser_path = "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe"
+		driver_path = os.path.normpath(os.path.join(os.getcwd(), "drivers/chromedriver-win64/chromedriver.exe"))
 		#launch a browser with linkedin login page
 		chrome_options = Options()
-		chrome_options.add_argument("--headless")
+		chrome_options.binary_location = browser_path
+		#chrome_options.add_argument("--headless")
+		service = Service(driver_path)
 		#chrome_options.add_argument("--disable-gpu")
 		#chrome_options.add_argument("--window-size=1920,1080")
+		
 
-		driver = webdriver.Chrome(options=chrome_options)
+		driver = webdriver.Chrome(options=chrome_options, service=service)
 		driver.get("https://linkedin.com/login")
 		#enter informations
 		username_input = driver.find_element(By.ID, "username")
@@ -88,6 +94,7 @@ class BenthamLINKEDIN:
 			linkedin_cookies = driver.get_cookies()
 			#display linkedin cookies
 			#save linkedin cookies
+			
 			try:
 				with open(os.path.join(os.getcwd(), "data/linkedin_cookies.json"), "w") as cookie_file:
 					json.dump(linkedin_cookies, cookie_file, indent=4)
@@ -117,11 +124,25 @@ class BenthamLINKEDIN:
 			#try to create a web browser
 			try:
 				self.call_from_thread(self.display_message, "Creating web browser")
+				#self.display_message("Trying to get linkedin cookies...")
+
+				browser_path = "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe"
+				driver_path = os.path.normpath(os.path.join(os.getcwd(), "drivers/chromedriver-win64/chromedriver.exe"))
+				#launch a browser with linkedin login page
 				chrome_options = Options()
-				#chrome_options.add_argument("--headless") 
+				chrome_options.binary_location = browser_path
+				#chrome_options.add_argument("--headless")
 				chrome_options.add_argument("--window-size=1920,1080")
+				service = Service(driver_path)
+				
+				driver = webdriver.Chrome(options=chrome_options, service=service)
+
+				browser_path = "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe"
+				service = Service(driver_path)
+				#chrome_options.add_argument("--disable-gpu")
+				#chrome_options.add_argument("--window-size=1920,1080")
 				#init the driver
-				self.driver_linkedin_scrapping = webdriver.Chrome(options = chrome_options)
+				self.driver_linkedin_scrapping = webdriver.Chrome(options = chrome_options, service=service)
 				connected=False
 				for i in range(50):
 					try:
@@ -188,6 +209,7 @@ class BenthamLINKEDIN:
 	def update_display_mode_function(self):
 		try:
 			self.call_from_thread(self.display_message, "Change display mode in linkedin...", "notification")
+			sleep(2)
 			#get the div trigger
 			div_trigger = self.driver_linkedin_scrapping.find_element(By.CSS_SELECTOR, ".t-12.t-bold.mh1")
 			#trigger div
@@ -227,14 +249,19 @@ class BenthamLINKEDIN:
 		#create the wait long variable
 		self.wait_long = WebDriverWait(self.driver_linkedin_scrapping, 10)
 		self.call_from_thread(self.display_message, "Starting to get linkedin data from feed...", "notification")
+		"""
+		refresh conditions
+		- limit date is reached
+		- limit number of scrolling iteration is reached
+		- limit number of 'already saved post' is reached
+		"""
 
-		"""
-		loop process
-			-> load the page
-			-> scroll to the bottom
-			-> get the content
-			-> again without refresh?
-		"""
+		#create all counter variables
+		#i is the max loop variable! don't change it
+		counter_max_day = 0
+		counter_max_scrolling = 0
+		counter_max_checked = 0
+		counter_max_saved = 0
 		for i in range(500):
 			#stop thread condition
 			if self.stop_thread_linkedin==False:
@@ -251,9 +278,7 @@ class BenthamLINKEDIN:
 			self.call_from_thread(self.display_message, "="*90, "notification")
 			self.call_from_thread(self.display_message, "New loop start...", "notification")
 			self.call_from_thread(self.display_message, "="*90, "notification")
-			#refresh the page
-			#self.driver_linkedin_scrapping.refresh()
-			#scroll to bottom of the page
+
 			self.driver_linkedin_scrapping.execute_script("window.scrollTo(0,document.body.scrollHeight);")
 			self.wait_long.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.feed-shared-update-v2")))
 			sleep(2)
@@ -325,6 +350,8 @@ class BenthamLINKEDIN:
 
 				#GET THE LINK OF THE POST
 				try:
+					#clean the content of the copy 
+					pyperclip.copy("nothing copied")
 					post_button = WebDriverWait(post, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'button.feed-shared-control-menu__trigger')))
 					ActionChains(self.driver_linkedin_scrapping).move_to_element(post_button).perform()
 					WebDriverWait(self.driver_linkedin_scrapping,5).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'button.feed-shared-control-menu__trigger')))
@@ -375,6 +402,7 @@ class BenthamLINKEDIN:
 									#self.save_scrapping_function()
 								else:
 									self.call_from_thread(self.display_message, "POST ALREADY DETECTED IN SCRAPPING DATA → SKIPPED", "error")
+									counter_max_saved+=1
 							else:
 								self.call_from_thread(self.display_message, "Interval values are not matching", "warning")
 								self.call_from_thread(self.display_message, "Skipping saving", "warning")
@@ -399,6 +427,8 @@ class BenthamLINKEDIN:
 			self.wait_long.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.feed-shared-update-v2")))
 			sleep(2)
 
+			counter_max_scrolling += 1
+		self.call_from_thread(self.display_message, "Scrapping limit reached → Process stoped")
 		return
 
 

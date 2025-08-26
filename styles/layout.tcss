@@ -26,7 +26,13 @@ Bentham_Modal_PostFormatting {
 
 		Label {
 			color: $accent;
+			border:red;
+			width:100%;
 		}
+		Markdown {
+			border:green;
+		}
+	
 	}
 	CollapsibleTitle {
 		width:100%;

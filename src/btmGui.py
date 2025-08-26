@@ -56,10 +56,17 @@ class Bentham_Modal_PostFormatting(Static):
 			yield self.markdown_linkedin_post_content
 
 			#link of the post
-			yield Label(f"To see the post on linkedin → {self.post_data["postLink"]}")
+			#yield Label(f"To see the post on linkedin → {self.post_data["postLink"]}")
 
 	def on_mount(self) -> None:
-		self.markdown_linkedin_post_content.update(self.post_data["postContent"])
+		markdown_content = f'''
+{self.post_data["postContent"]}
+
+## To display the post on Linkedin
+{self.post_data["postLink"]}
+'''
+		#self.markdown_linkedin_post_content.update(self.post_data["postContent"])
+		self.markdown_linkedin_post_content.update(markdown_content)
 
 
 
