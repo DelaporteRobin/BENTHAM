@@ -37,6 +37,7 @@ import json
 import re 
 import argparse
 import os 
+import copy
 import colorama
 
 colorama.init()
@@ -94,6 +95,87 @@ class BenthamGUI:
 
 	#show saved post from linkedin scrapping in the main interface
 	def display_scrapping_function(self):
+
+		self.call_from_thread(self.display_message, "Trying to read saved scrapping datas", "notification")
+		self.list_mounted_post_size = 0
+
+		while True:
+			self.call_from_thread(self.display_message, "refresh...", "message")
+			try:
+				with open("data/linkedin_scrapping.json", "r") as scrapping_file:
+					self.scrapping_file_data = json.load(scrapping_file)
+			except FileNotFoundError:
+				self.call_from_thread(self.display_message, "No scrapping data saved yet...", "error")
+				sleep(10)
+			except Exception as e:
+				self.call_from_thread(self.display_message, "Impossible to read scrapping content...", "error")
+				sleep(10)
+
+			else:
+				try:
+					"""
+					from the content / dictionnary saved in file
+						- display all saved posts
+						- save the current state of the dictionnary to compare with the new dictionnary
+					"""
+					#if ("LinkedinScrapping" in self.scrapping_file_data) and (self.scrapping_file_data)
+					if self.scrapping_file_data != self.scrapping_file_data_backup:
+						self.call_from_thread(self.display_message, "New data detected", "notification")
+						
+						#get differences in dictionnary
+						#if ("LinkedinScrapping" in self.scrapping_file_data) and ("LinkedinScrapping":
+						if ("LinkedinScrapping" in self.scrapping_file_data) and ("LinkedinScrapping" not in self.scrapping_file_data_backup):
+							self.call_from_thread(self.display_message, "Init scrapping display", "message")
+							self.call_from_thread(self.display_message, f"{len(list(self.scrapping_file_data["LinkedinScrapping"].keys()))} post(s) detected")
+							#send all post to display
+							for post_id, post_data in self.scrapping_file_data["LinkedinScrapping"].items():
+								post_tui = Bentham_Modal_PostFormatting(post_id, post_data)
+								self.scrapping_post_container.append(post_tui)
+								self.call_from_thread(self.vertical_post_container.mount,post_tui)
+
+						if ("LinkedinScrapping" in self.scrapping_file_data) and ("LinkedinScrapping" in self.scrapping_file_data_backup):
+							#check for differences
+							self.call_from_thread(self.display_message, "Check differences...", "message")
+
+							#EQUAL SIZE
+							if len(list(self.scrapping_file_data["LinkedinScrapping"].keys())) == len(list(self.scrapping_file_data_backup["LinkedinScrapping"].keys())):
+								self.call_from_thread(self.display_message, "No difference detected", "message")
+
+							#NEW POST ADDED
+							elif len(list(self.scrapping_file_data["LinkedinScrapping"].keys())) > len(list(self.scrapping_file_data_backup["LinkedinScrapping"].keys())):
+								self.call_from_thread(self.display_message, "New posts to display", "message")
+								#go through each key of the new dictionnary
+								#get keys which are not saved in the backup dictionnary
+								#display these posts
+								for post_id, post_data in self.scrapping_file_data["LinkedinScrapping"].items():
+									if post_id not in self.scrapping_file_data_backup["LinkedinScrapping"]:
+										post_tui = Bentham_Modal_PostFormatting(post_id, post_data)
+										self.scrapping_post_container.append(post_tui)
+										self.call_from_thread(self.vertical_post_container.mount,post_tui)
+
+							#A POST TO REMOVE?
+							else:
+								self.call_from_thread(self.display_message, "Post to remove", "message")
+								#go through each key of the backup dictionnary
+								#get the index of all post id not in dictionnary anymore
+								#remove the related post layout from the TUI
+								list_backup_post = list(self.scrapping_file_data_backup["LinkedinScrapping"].keys())
+								for i in range(len(list_backup_post)):
+									if list_backup_post[i] not in self.scrapping_file_data["LinkedinScrapping"]:
+										self.call_from_thread(self.display_message, f"Post to remove detected : {[i]}") 
+										#widget / container to remove
+										post_to_remove = self.scrapping_post_container[i]
+										self.call_from_thread(post_to_remove.remove)
+										self.scrapping_post_container.pop(i)
+
+						self.scrapping_file_data_backup = copy.copy(self.scrapping_file_data)
+				except Exception as e:
+					self.call_from_thread(self.display_message, f"Error happened\n{traceback.format_exc()}", "error")
+
+			self.call_from_thread(self.display_message, " ", "message", False)
+			sleep(5)
+
+		"""
 		try:
 			self.list_mounted_post_size = 0
 			self.call_from_thread(self.display_message, "Starting to read saved linkedin posts...", "notification")
@@ -119,3 +201,4 @@ class BenthamGUI:
 		except Exception as e:
 			self.call_from_thread(self.display_message, "Scrapping reader failed", "error")
 			self.call_from_thread(self.display_message, traceback.format_exc(), "error")
+		"""
