@@ -71,10 +71,17 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 			("Sorted by relevance",0),
 			("Sorted by most recent",1)
 		]
+		self.webbrowser_list = [
+			("Brave",1),
+			("Chrome",2),
+			]
 		#create the rich console
 		self.console = Console(theme=self.rich_theme)
 		#user informations here
-		self.user_data = {}
+		self.user_data = {
+			"MinDayValue":0,
+			"MaxDayValue":10,
+		}
 		self.linkedin_cookies = {}
 		self.linkedin_scrapping_table = {}
 		self.linkedin_post_checked = []
@@ -106,7 +113,13 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 			
 			
 			with VerticalScroll(id = "vertical_column_left"):
-				with Collapsible(title = "Linkedin authentification", id="collapsible_authentification"):
+				with Collapsible(title = "Global settings", id="collapsible_authentification"):
+
+					yield Label("Define your Web Browser in the list")
+					self.select_browser = Select(self.webbrowser_list)
+					yield self.select_browser
+
+					yield Label("Linkedin login informations")
 					self.input_linkedin_username = Input(placeholder="Linkedin mail or phone", id="input_linkedin_username")
 					self.input_linkedin_password = Input(placeholder = "Linkedin password", password=True, id="input_linkedin_password")
 
@@ -120,18 +133,21 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 					self.select_linkedin_displaymode = Select(self.list_display_mode,id="select_linkedin_displaymode", value=1)
 					yield self.select_linkedin_displaymode
 
-					#self.input_min_day_value = Input(placeholder="Minimum day value", id="input_min_day_value",type="integer",value="0")
+					self.input_min_day_value = Input(placeholder="Minimum day value", id="input_min_day_value",type="integer",value="0")
 					self.input_max_day_value = Input(placeholder="Maximum day value", id="input_max_day_value",type="integer",value="10")					
 					self.input_max_scrolling = Input(placeholder="Max scrolling iteration value",id="input_max_scrolling", type="integer", value="150")
 					self.input_max_already_saved = Input(placeholder='Max "already saved" post reached', id="input_max_already_saved", type="integer", value="500")
 
-					#yield self.input_min_day_value
+					
 					yield Label('Max "already saved" post reached', id="label_max_already_saved")
-					yield self.input_max_day_value
+					yield self.input_max_already_saved
 					yield Label("Max scrolling iteration value", id="label_max_scrolling")
 					yield self.input_max_scrolling
+					yield Label("Min day value", id="label_min_day_value")
+					yield self.input_min_day_value
 					yield Label("Max day value",id="label_max_day_value")
-					yield self.input_max_already_saved
+					yield self.input_max_day_value
+					
 
 					self.checkbox_startup_mode = Checkbox("Start scrapping at startup", value=False, id="checkbox_startup_mode")
 					yield self.checkbox_startup_mode
@@ -224,8 +240,8 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 		#update the interface
 		self.update_lobby_informations()
 		#launch the thread to read scrapping live
-		#self.thread_display_scrapping = threading.Thread(target=self.display_scrapping_function, args=(), daemon=True)
-		#self.thread_display_scrapping.start()
+		self.thread_display_scrapping = threading.Thread(target=self.display_scrapping_function, args=(), daemon=True)
+		self.thread_display_scrapping.start()
 		
 
 	def on_checkbox_changed(self, event:Checkbox.Changed) -> None:
@@ -241,12 +257,15 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 			self.save_user_data_function()
 
 	def on_input_submitted(self, event:Input.Submitted) -> None:
-		if event.input.id == "input_min_day_value":
-			self.user_data["MinDayValue"] = self.input_min_day_value.value
-			self.save_user_data_function() 
-		if event.input.id == "input_max_day_value":
-			self.user_data["MaxDayValue"] = self.input_max_day_value.value
+		if event.input.id in ["input_min_day_value", "input_max_day_value", "input_max_scrolling", "input_max_already_saved"]:
+			if event.input.id == "input_min_day_value":
+				self.user_data["MinDayValue"] = self.input_min_day_value.value
+			if event.input.id == "input_max_day_value":
+				self.user_data["MaxDayValue"] = self.input_max_day_value.value
+				#self.display_message("changed")
+
 			self.save_user_data_function()
+
 		if (event.input.id == "input_keyword_required") or (event.input.id == "input_keyword_pertinent"):
 			#get the content of the input
 			#split the content by | 

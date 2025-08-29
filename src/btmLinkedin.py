@@ -60,14 +60,15 @@ class BenthamLINKEDIN:
 		driver_path = os.path.normpath(os.path.join(os.getcwd(), "drivers/chromedriver-win64/chromedriver.exe"))
 		#launch a browser with linkedin login page
 		chrome_options = Options()
-		chrome_options.binary_location = browser_path
+		#chrome_options.binary_location = browser_path
 		#chrome_options.add_argument("--headless")
-		service = Service(driver_path)
+		#service = Service(driver_path)
 		#chrome_options.add_argument("--disable-gpu")
 		#chrome_options.add_argument("--window-size=1920,1080")
 		
 
-		driver = webdriver.Chrome(options=chrome_options, service=service)
+		#driver = webdriver.Chrome(options=chrome_options, service=service)
+		driver = webdriver.Chrome(options=chrome_options)
 		driver.get("https://linkedin.com/login")
 		#enter informations
 		username_input = driver.find_element(By.ID, "username")
@@ -98,6 +99,7 @@ class BenthamLINKEDIN:
 			try:
 				with open(os.path.join(os.getcwd(), "data/linkedin_cookies.json"), "w") as cookie_file:
 					json.dump(linkedin_cookies, cookie_file, indent=4)
+				self.user_data["LinkedinCookies"] = linkedin_cookies
 			except Exception as e:
 				#self.console.print("Impossible to save linkedin cookies in file\n%s"%traceback.format_exc(), style="error")
 				self.display_message("Impossible to save linkedin cookies in file", "error")
@@ -125,24 +127,36 @@ class BenthamLINKEDIN:
 			try:
 				self.call_from_thread(self.display_message, "Creating web browser")
 				#self.display_message("Trying to get linkedin cookies...")
-
-				browser_path = "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe"
-				driver_path = os.path.normpath(os.path.join(os.getcwd(), "drivers/chromedriver-win64/chromedriver.exe"))
 				#launch a browser with linkedin login page
 				chrome_options = Options()
-				chrome_options.binary_location = browser_path
+				#DEFAULT BROWSER OPTIONS
 				#chrome_options.add_argument("--headless")
 				chrome_options.add_argument("--window-size=1920,1080")
-				service = Service(driver_path)
-				
-				driver = webdriver.Chrome(options=chrome_options, service=service)
-
-				browser_path = "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe"
-				service = Service(driver_path)
 				#chrome_options.add_argument("--disable-gpu")
 				#chrome_options.add_argument("--window-size=1920,1080")
+				if ("BrowserExecutable" in self.user_data) and ("BrowserDifferent" in self.user_data):
+					#replace the browser in driver settings
+					if self.user_data["BrowserDifferent"]==True:	
+						chrome_options.binary_location = self.user_data["BrowserExecutable"]
+						self.call_from_thread(self.display_message, f"Browser executable replaced : {self.user_data["BrowserExecutable"]}")
+					
+				#browser_path = "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe"
+				driver_path = os.path.normpath(os.path.join(os.getcwd(), "drivers/chromedriver-win64/chromedriver.exe"))
+
+				
+				if os.path.isfile(driver_path)==True:
+					self.call_from_thread(self.display_message, "Web browser driver found...", "notification")
+					service = Service(driver_path)
+					self.driver_linkedin_scrapping = webdriver.Chrome(options = chrome_options, service=service)
+				else:
+					self.call_from_thread(self.display_message, "Impossible to find Web browser drivers", "error")
+					self.driver_linkedin_scrapping = webdriver.Chrome(options = chrome_options)
+				
+
+				
 				#init the driver
-				self.driver_linkedin_scrapping = webdriver.Chrome(options = chrome_options, service=service)
+				
+				
 				connected=False
 				for i in range(50):
 					try:
@@ -158,13 +172,13 @@ class BenthamLINKEDIN:
 					self.call_from_thread(self.display_message, "Impossible to access linkedin, program terminated", "error")
 					exit()
 				#get cookies
-				cookies = self.load_linkedin_cookies_function()
-				if type(cookies)==list:
+				#cookies = self.load_linkedin_cookies_function()
+				if "LinkedinCookies" in self.user_data: 
 					self.call_from_thread(self.display_message, "Trying to load cookies in driver...")
 					try:
 						#load cookies
 						
-						for cookie in cookies:
+						for cookie in self.user_data["LinkedinCookies"]:
 							self.driver_linkedin_scrapping.add_cookie(cookie)
 						self.driver_linkedin_scrapping.refresh()
 						#enter user credentials and try to log in
@@ -192,7 +206,7 @@ class BenthamLINKEDIN:
 				self.call_from_thread(self.display_message, traceback.format_exc(), "error")
 			else:
 				self.call_from_thread(self.display_message, "Driver creation finished", "success")
-
+				#sleep(5)
 				#TRY TO CHANGE THE LINKEDIN DISPLAY MODE
 				#get the value from the page
 				self.update_display_mode_function()
@@ -485,6 +499,13 @@ class BenthamLINKEDIN:
 
 	def load_linkedin_cookies_function(self):
 		self.call_from_thread(self.display_message, os.getcwd(), "message")
+
+		if "LinkedinCookies" not in self.user_data:
+			self.call_from_thread(self.display_message, "Impossible to get linkedin cookies in settings", "error")
+			return False
+		else:
+			return True
+		"""
 		if os.path.isfile(os.path.join(os.getcwd(), "data/linkedin_cookies.json"))==False:
 			self.call_from_thread(self.display_message, "Cookie not saved in file", "error")
 			return None
@@ -498,3 +519,4 @@ class BenthamLINKEDIN:
 			else:
 				self.call_from_thread(self.display_message, "Cookies retrieved from file", "success")
 				return cookies
+		"""
