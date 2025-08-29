@@ -45,6 +45,7 @@ import threading
 import sys
 import os 
 import traceback
+import copy
 
 
 class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY):
@@ -78,6 +79,9 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 		self.linkedin_scrapping_table = {}
 		self.linkedin_post_checked = []
 		self.scrapping_data = {}
+		self.scrapping_file_data = {}
+		self.scrapping_file_data_backup = copy.copy(self.scrapping_file_data)
+		self.scrapping_post_container = []
 		#keyword list for linkedin parsing
 		self.list_keyword_required = []
 		self.list_keyword_pertinent = []
@@ -116,10 +120,18 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 					self.select_linkedin_displaymode = Select(self.list_display_mode,id="select_linkedin_displaymode", value=1)
 					yield self.select_linkedin_displaymode
 
-					self.input_min_day_value = Input(placeholder="Minimum day value", id="input_min_day_value",type="integer",value="0")
-					self.input_max_day_value = Input(placeholder="Maximum day value", id="input_max_day_value",type="integer",value="10")
-					yield self.input_min_day_value
+					#self.input_min_day_value = Input(placeholder="Minimum day value", id="input_min_day_value",type="integer",value="0")
+					self.input_max_day_value = Input(placeholder="Maximum day value", id="input_max_day_value",type="integer",value="10")					
+					self.input_max_scrolling = Input(placeholder="Max scrolling iteration value",id="input_max_scrolling", type="integer", value="150")
+					self.input_max_already_saved = Input(placeholder='Max "already saved" post reached', id="input_max_already_saved", type="integer", value="500")
+
+					#yield self.input_min_day_value
+					yield Label('Max "already saved" post reached', id="label_max_already_saved")
 					yield self.input_max_day_value
+					yield Label("Max scrolling iteration value", id="label_max_scrolling")
+					yield self.input_max_scrolling
+					yield Label("Max day value",id="label_max_day_value")
+					yield self.input_max_already_saved
 
 					self.checkbox_startup_mode = Checkbox("Start scrapping at startup", value=False, id="checkbox_startup_mode")
 					yield self.checkbox_startup_mode
@@ -293,6 +305,8 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 			#change the value of the thread theme_variables
 			self.stop_thread_linkedin = False
 			#try to terminate the driver
+
+
 
 
 		

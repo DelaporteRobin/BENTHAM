@@ -17,10 +17,32 @@ Button {
 	margin-right:1;
 	margin-left:1;
 }
-#vertical_linkedin_container {
-	border:solid red;
-	height:1fr;
-}
-#markdown_linkedin_post_content {
-	border:solid green;
+
+Bentham_Modal_PostFormatting {
+	Collapsible {
+		margin-top:1;
+		margin-right:1;
+		height:auto;
+
+		Label {
+			color: $accent;
+			border:red;
+			width:100%;
+		}
+		Markdown {
+			border:green;
+		}
+	
+	}
+	CollapsibleTitle {
+		width:100%;
+		background:$secondary;
+		margin-right:1;
+		padding-top:1;
+		padding-bottom:1;
+		padding-left:2;
+		padding-right:2;
+
+		text-style:bold;
+	}
 }
