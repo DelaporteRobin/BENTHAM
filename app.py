@@ -81,6 +81,7 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 		self.user_data = {
 			"MinDayValue":0,
 			"MaxDayValue":10,
+			"MaxSavedDisplay":5,
 		}
 		self.linkedin_cookies = {}
 		self.linkedin_scrapping_table = {}
@@ -88,14 +89,22 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 		self.scrapping_data = {}
 		self.scrapping_file_data = {}
 		self.scrapping_file_data_backup = copy.copy(self.scrapping_file_data)
+
 		self.scrapping_post_container = []
+		self.scrapping_post_displayed = []
+		self.scrapping_post_display_limit_backup = 0
 		#keyword list for linkedin parsing
 		self.list_keyword_required = []
 		self.list_keyword_pertinent = []
+
+		#init scrapping label values
+		self.counter_displayed_post = "XXX"
+		self.counter_saved_post = "XXX"
+		self.counter_checked_post = "XXX"
 		
 		#thread init variable
 		self.stop_thread_linkedin = False
-		#self.lock_log_file = threading.Lock()
+		self.lock_log_file = threading.Lock()
 
 	def compose(self) -> ComposeResult:
 		yield Header(show_clock=True)
@@ -165,7 +174,25 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 
 
 			with VerticalScroll(id = "vertical_column_right"):
-				yield Label("Linkedin posts")
+				#yield Label("Linkedin posts")
+				with Horizontal(id = "horizontal_scrapping_informations"):
+					"""
+					scrapping informations to display
+						number of displayed posts
+						number of saved post (in file)
+						number of checked post in file (total)
+					"""
+					with Horizontal(id = "horizontal_scrapping_left"):
+						self.label_counter_displayed = Label("",id="label_counter_displayed")
+						self.label_counter_saved = Label("",id="label_counter_saved")
+						self.label_counter_checked = Label("",id="label_counter_checked")
+						yield self.label_counter_displayed
+						yield self.label_counter_saved
+						yield self.label_counter_checked
+					with Vertical(id = "horizontal_scrapping_right"):
+						yield Label("Maximum saved post(s) displayed",id="label_display_post_title")
+						self.input_max_saved = Input(placeholder="Maximum saved post",type="integer",id="input_max_saved", value=str(self.user_data["MaxSavedDisplay"]))
+						yield self.input_max_saved
 				
 				self.vertical_post_container = VerticalScroll(id = "vertical_post_container")
 				yield self.vertical_post_container
@@ -200,22 +227,21 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 		#save the line in a file
 
 		#lock the file
-		try:
-			self.lock_log_file.acquire()
-			#write log line
-			with open("data/btmLog.log", "a", encoding="utf-8") as log_file:
-				log_file.write("%s\n"%str(format_msg))
-			#release the lock
-			self.lock_log_file.release()
-		except Exception as e:
-			pass
+		
+		self.lock_log_file.acquire()
+		#write log line
+		with open("data/btmLog.log", "a", encoding="utf-8") as log_file:
+			log_file.write("%s\n"%str(format_msg))
+		#release the lock
+		self.lock_log_file.release()
+		
 			#self.listview_log.append(ListItem(Label(str(traceback.format_exc()))))
 		#update the log listview
 		#check for the number of items already contained in the list
 		#limit is set to 150?
 
 		
-		if len(self.listview_log.children)==150:
+		if len(self.listview_log.children)==50:
 			self.listview_log.pop(0)
 		
 		#add the new item to the listview :)
@@ -231,7 +257,8 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 
 	def on_mount(self) -> None:
 		self.display_message("Welcome in Bentham", "notification")
-		
+		#create a title to the vertical column
+		self.query_one("#vertical_post_container").border_title = "  LINKEDIN SAVED POST(S)  "
 		
 
 		#load user data
@@ -257,6 +284,9 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 			self.save_user_data_function()
 
 	def on_input_submitted(self, event:Input.Submitted) -> None:
+		if event.input.id == "input_max_saved":
+			self.user_data["MaxSavedDisplay"] = int(self.input_max_saved.value)
+			self.save_user_data_function()
 		if event.input.id in ["input_min_day_value", "input_max_day_value", "input_max_scrolling", "input_max_already_saved"]:
 			if event.input.id == "input_min_day_value":
 				self.user_data["MinDayValue"] = self.input_min_day_value.value

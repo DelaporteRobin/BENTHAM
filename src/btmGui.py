@@ -93,6 +93,23 @@ class BenthamGUI:
 
 		self.display_message("Updating informations done...", "success")
 
+	def update_scrapping_label_function(self):
+		#get values from scrapping data
+		#number of post displayed on TUI
+		#number of post saved in file (total)
+		#number of post checked in file (total)
+		try:
+			if "LinkedinScrapping" in self.scrapping_file_data:
+				self.counter_displayed_post = len(self.scrapping_post_displayed)
+				self.counter_saved_post = len(list(self.scrapping_file_data["LinkedinScrapping"].keys()))
+				self.counter_checked_post = len(self.scrapping_file_data["LinkedinCheckedPost"])
+			self.label_counter_displayed.update(f"Displayed Posts\n{self.counter_displayed_post}")
+			self.label_counter_saved.update(f"Saved Posts\n{self.counter_saved_post}")
+			self.label_counter_checked.update(f"Checked Posts\n{self.counter_checked_post}")
+		except:
+			self.call_from_thread(self.display_message, f"Impossible to update scrapping labels\n{traceback.format_exc()}", "error")
+
+
 	#show saved post from linkedin scrapping in the main interface
 	def display_scrapping_function(self):
 
@@ -100,19 +117,81 @@ class BenthamGUI:
 		self.list_mounted_post_size = 0
 
 		while True:
-			self.call_from_thread(self.display_message, "refresh...", "message")
+			#display current "display post limitation"
+			#self.call_from_thread(self.display_message, f"Current display post limitation : {self.user_data["MaxSavedDisplay"]}")
+			self.update_scrapping_label_function()
+			#self.call_from_thread(self.display_message, "refresh...", "message")
 			try:
 				with open("data/linkedin_scrapping.json", "r") as scrapping_file:
 					self.scrapping_file_data = json.load(scrapping_file)
 			except FileNotFoundError:
 				self.call_from_thread(self.display_message, "No scrapping data saved yet...", "error")
-				sleep(10)
+				sleep(5)
 			except Exception as e:
 				self.call_from_thread(self.display_message, "Impossible to read scrapping content...", "error")
-				sleep(10)
+				sleep(5)
 
 			else:
+				"""
+				check first is the display limit has been updated 
+					→ update this information on interface first
+				then check for differences in scrapping dictionnary
+				"""
 				try:
+					#try to detect if the display limit has changed
+					if self.scrapping_post_display_limit_backup != int(self.user_data["MaxSavedDisplay"]):
+						#value updated
+						self.call_from_thread(self.display_message, "Max display value updated...")
+						
+						#detect if post must be removed or loaded?
+						#MODIFICATIONS TO MAKE WHEN LIMIT IS UPDATED
+						#mount or remove the post on the interface
+						#remove from the display list
+						#/!\ CHECK IF THE POST IS ALREADY IN THE LIST to avoid mistakes
+						if int(self.user_data["MaxSavedDisplay"]) > self.scrapping_post_display_limit_backup:
+							#create the list of index between the two numbers
+							self.call_from_thread(self.display_message, "add new items", "message")
+							index_list = list(range(self.scrapping_post_display_limit_backup, int(self.user_data["MaxSavedDisplay"])))
+							for index in index_list:
+								#check if index is in list
+								try:
+									post_to_mount = self.scrapping_post_container[index]
+									self.call_from_thread(self.display_message, f"post detected : {index}")
+								except Exception as e:
+									self.call_from_thread(self.display_message, f"Impossible to mount post : {e}", "notification")
+								else:
+									#mount the post and add it to the displayed post list
+									self.call_from_thread(self.vertical_post_container.mount, post_to_mount)
+									#update other lists
+									if post_to_mount not in self.scrapping_post_displayed:
+										self.scrapping_post_displayed.append(post_to_mount)
+
+						if int(self.user_data["MaxSavedDisplay"]) < self.scrapping_post_display_limit_backup:
+							self.call_from_thread(self.display_message, "remove items", "message")
+							index_list = list(range(int(self.user_data["MaxSavedDisplay"]), self.scrapping_post_display_limit_backup+1))
+							for index in index_list:
+								try:
+									post_to_remove = self.scrapping_post_container[index]
+									self.call_from_thread(self.display_message, f"Post detected")
+								except Exception as e:
+									self.call_from_thread(self.display_message, f"Impossible to remove post : {e}", "notification")
+								else:
+									#try to remove the post from the interface
+									try:
+										self.call_from_thread(post_to_remove.remove)
+										self.call_from_thread(self.display_message, "Post removed from TUI", "success")
+									except Exception as e:
+										self.call_from_thread(self.display_message, f"Failed to remove post : {e}", "error")
+									else:
+										#remove post from lists
+										try:
+											self.scrapping_post_displayed.remove(post_to_remove)
+										except:
+											pass
+
+						self.call_from_thread(self.display_message, index_list, "message")
+						self.scrapping_post_display_limit_backup = copy.copy(int(self.user_data["MaxSavedDisplay"]))
+
 					"""
 					from the content / dictionnary saved in file
 						- display all saved posts
@@ -131,7 +210,12 @@ class BenthamGUI:
 							for post_id, post_data in self.scrapping_file_data["LinkedinScrapping"].items():
 								post_tui = Bentham_Modal_PostFormatting(post_id, post_data)
 								self.scrapping_post_container.append(post_tui)
-								self.call_from_thread(self.vertical_post_container.mount,post_tui)
+								
+								if self.scrapping_post_container.index(post_tui) > int(self.user_data["MaxSavedDisplay"])-1:	
+									pass
+								else:
+									self.call_from_thread(self.vertical_post_container.mount,post_tui)
+									self.scrapping_post_displayed.append(post_tui)
 
 						if ("LinkedinScrapping" in self.scrapping_file_data) and ("LinkedinScrapping" in self.scrapping_file_data_backup):
 							#check for differences
@@ -151,7 +235,11 @@ class BenthamGUI:
 									if post_id not in self.scrapping_file_data_backup["LinkedinScrapping"]:
 										post_tui = Bentham_Modal_PostFormatting(post_id, post_data)
 										self.scrapping_post_container.append(post_tui)
-										self.call_from_thread(self.vertical_post_container.mount,post_tui)
+
+										#check for the limitation before mounting the post
+										if self.scrapping_post_container.index(post_tui) <= self.user_data["MaxSavedDisplay"]-1:
+											self.scrapping_post_displayed.append(post_tui)
+											self.call_from_thread(self.vertical_post_container.mount,post_tui)
 
 							#A POST TO REMOVE?
 							else:
@@ -165,40 +253,13 @@ class BenthamGUI:
 										self.call_from_thread(self.display_message, f"Post to remove detected : {[i]}") 
 										#widget / container to remove
 										post_to_remove = self.scrapping_post_container[i]
-										self.call_from_thread(post_to_remove.remove)
 										self.scrapping_post_container.pop(i)
+
+										self.call_from_thread(post_to_remove.remove)
 
 						self.scrapping_file_data_backup = copy.copy(self.scrapping_file_data)
 				except Exception as e:
 					self.call_from_thread(self.display_message, f"Error happened\n{traceback.format_exc()}", "error")
 
-			self.call_from_thread(self.display_message, " ", "message", False)
-			sleep(5)
-
-		"""
-		try:
-			self.list_mounted_post_size = 0
-			self.call_from_thread(self.display_message, "Starting to read saved linkedin posts...", "notification")
-			#GET THE CONTENT OF THE SCRAPPING LOG IF IT EXISTS
-			#for i in range(50):
-			with open("data/linkedin_scrapping.json", "r") as scrapping_file:
-				scrapping_content = json.load(scrapping_file)
-			table_post = scrapping_content["LinkedinScrapping"]
-			
-			if len(list(table_post.keys())) != self.list_mounted_post_size:
-				
-				
-				for post_id, post_data in table_post.items():
-					post_tui = Bentham_Modal_PostFormatting(post_id,post_data)
-
-					#mount the formatted post tui in the vertical scroll contained
-					self.call_from_thread(self.vertical_post_container.mount,post_tui)
-			
-
-
-
-			self.call_from_thread(self.display_message, self.vertical_post_container.children)
-		except Exception as e:
-			self.call_from_thread(self.display_message, "Scrapping reader failed", "error")
-			self.call_from_thread(self.display_message, traceback.format_exc(), "error")
-		"""
+			#self.call_from_thread(self.display_message, " ", "message", False)
+			sleep(1)

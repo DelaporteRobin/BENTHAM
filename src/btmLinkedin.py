@@ -132,8 +132,7 @@ class BenthamLINKEDIN:
 				#DEFAULT BROWSER OPTIONS
 				#chrome_options.add_argument("--headless")
 				chrome_options.add_argument("--window-size=1920,1080")
-				#chrome_options.add_argument("--disable-gpu")
-				#chrome_options.add_argument("--window-size=1920,1080")
+				chrome_options.add_argument("--disable-gpu")
 				if ("BrowserExecutable" in self.user_data) and ("BrowserDifferent" in self.user_data):
 					#replace the browser in driver settings
 					if self.user_data["BrowserDifferent"]==True:	
@@ -303,6 +302,7 @@ class BenthamLINKEDIN:
 			list_button = self.driver_linkedin_scrapping.find_element(By.CSS_SELECTOR, 'button.feed-shared-control-menu__trigger.artdeco-button.artdeco-button--tertiary.artdeco-button--muted.artdeco-button--1.artdeco-button--circle.artdeco-dropdown__trigger.artdeco-dropdown__trigger--placement-bottom.ember-view')
 
 			for post in list_post:
+				
 				if self.stop_thread_linkedin==False:
 					self.call_from_thread(self.display_message, "User stoped the thread...", "notification")
 					try:
@@ -314,8 +314,7 @@ class BenthamLINKEDIN:
 						self.display_message("Driver killed successfully", "success")
 					return
 
-				self.call_from_thread(self.display_message, " ")
-				self.call_from_thread(self.display_message, "Checking new post content", "notification")
+				#self.call_from_thread(self.display_message, f"Checking new post content → {post._id}", "notification")
 				#CHECK IF THE POST HAS ALREADY BEEN CHECKED
 				post_id = post.get_attribute("data-urn") or post.text[:50]
 				if post_id in self.linkedin_post_checked:
@@ -325,7 +324,7 @@ class BenthamLINKEDIN:
 					self.linkedin_post_checked.append(post_id)
 				
 				#self.call_from_thread(self.display_message,"Display post content","notification")
-				self.call_from_thread(self.display_message, "POST ID → %s"%post_id,"notification")
+				#self.call_from_thread(self.display_message, "POST ID → %s"%post_id,"notification")
 				#self.call_from_thread(self.display_message, str(post))
 				#post_title = post.find_elements(By.CSS_SELECTOR, "span[aria-hidden='true']")[0]
 				post_text_list_element = post.find_elements(By.CSS_SELECTOR, "span[dir='ltr']")
@@ -360,36 +359,22 @@ class BenthamLINKEDIN:
 						post_shared_text[i] = post_shared_text[i].text
 
 					post_text_shared_combined = "\n".join(post_shared_text)
-					self.call_from_thread(self.display_message, "Shared content\n%s"%post_shared_text[i], "notification")
+					#self.call_from_thread(self.display_message, "Shared content\n%s"%post_shared_text[i], "notification")
 
 				#GET THE LINK OF THE POST
-				try:
-					#clean the content of the copy 
-					pyperclip.copy("nothing copied")
-					post_button = WebDriverWait(post, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'button.feed-shared-control-menu__trigger')))
-					ActionChains(self.driver_linkedin_scrapping).move_to_element(post_button).perform()
-					WebDriverWait(self.driver_linkedin_scrapping,5).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'button.feed-shared-control-menu__trigger')))
-					post_button.click()
-					post_div = post.find_element(By.CSS_SELECTOR, 'div.feed-shared-control-menu__content')
-					menu_option = WebDriverWait(self.driver_linkedin_scrapping, 8).until(EC.presence_of_all_elements_located((By.XPATH, "//div[contains(@class, 'feed-shared-control-menu__content')]//div[@role='button']")))			
-					menu_option[1].click()
-					post_link = pyperclip.paste()
-					self.call_from_thread(self.display_message, "Post link : %s"%post_link,"success")
-				except Exception as e:
-					self.call_from_thread(self.display_message, "Impossible to get post link", "error")
-					self.call_from_thread(self.display_message, traceback.format_exc(), "error")
-					self.call_from_thread(self.display_message, "Posting date detection skipped", "error")
-					
-				else:
+				post_link = self.get_post_link_function(post)
+				if post_link != False:
 					#GET THE POSTING DATE
 					post_date = self.get_linkedin_post_date_function(post_link)
 					if post_date != None:
-						self.call_from_thread(self.display_message, "Date detected : %s"%str(post_date),"success")
+						self.call_from_thread(self.display_message, "Date detected in post : %s"%str(post_date),"success")
 						#self.call_from_thread(self.display_message, str(type(post_date)), "message")
 						post_date_converted = datetime.strptime((post_date.replace(" (UTC)", "")),"%a, %d %b %Y %H:%M:%S")
 						delta = (datetime.now()-post_date_converted).days
-						self.call_from_thread(self.display_message, "Converted date : %s"%str(post_date_converted), "success")
-						self.call_from_thread(self.display_message, "Delta : %s"%str(delta), "success")
+
+						self.call_from_thread(self.display_message, "Converted date : %s"%str(post_date_converted))
+						self.call_from_thread(self.display_message, "Delta : %s"%str(delta))
+
 						#check if the delta in days is contained in interval
 						if ("MinDayValue" in self.user_data) and ("MaxDayValue" in self.user_data):
 							if (delta >= int(self.user_data["MinDayValue"])) and (delta <= int(self.user_data["MaxDayValue"])):
@@ -427,7 +412,7 @@ class BenthamLINKEDIN:
 					"LinkedinCheckedPost":self.linkedin_post_checked
 				}
 				self.save_scrapping_function()
-				self.call_from_thread(self.display_message, "\n", "message",False)
+				self.call_from_thread(self.display_message, "\n\n", "message", False)
 				"""
 				for post_text in list_post_text:
 					self.call_from_thread(self.display_message, str(post_text.text))
@@ -459,11 +444,32 @@ class BenthamLINKEDIN:
 				if (keyword.upper() in content) or (keyword.lower() in content) or (keyword.capitalize() in content):
 					self.call_from_thread(self.display_message, f"  Keyword detected : {keyword}","success")
 					checking_status=True
-				else:
-					self.call_from_thread(self.display_message, f'  Keyword not detected : {keyword}', "message")
+				#else:
+				#self.call_from_thread(self.display_message, f'  Keyword not detected : {keyword}', "message")
 
 
 		return checking_status
+
+	def get_post_link_function(self,post):
+		try:
+			#clean the content of the copy 
+			pyperclip.copy("nothing copied")
+			post_button = WebDriverWait(post, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'button.feed-shared-control-menu__trigger')))
+			ActionChains(self.driver_linkedin_scrapping).move_to_element(post_button).perform()
+			WebDriverWait(self.driver_linkedin_scrapping,5).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'button.feed-shared-control-menu__trigger')))
+			post_button.click()
+			post_div = post.find_element(By.CSS_SELECTOR, 'div.feed-shared-control-menu__content')
+			menu_option = WebDriverWait(self.driver_linkedin_scrapping, 8).until(EC.presence_of_all_elements_located((By.XPATH, "//div[contains(@class, 'feed-shared-control-menu__content')]//div[@role='button']")))			
+			menu_option[1].click()
+			post_link = pyperclip.paste()
+			self.call_from_thread(self.display_message, "Post link : %s"%post_link)
+		except Exception as e:
+			self.call_from_thread(self.display_message, "Impossible to get post link", "error")
+			self.call_from_thread(self.display_message, traceback.format_exc(), "error")
+			self.call_from_thread(self.display_message, "Posting date detection skipped", "error")
+			return False
+		else:
+			return post_link
 
 
 	def get_linkedin_post_date_function(self,url):

@@ -5,7 +5,12 @@
 /*CODE FOR MAIN CONTAINER IN THE PAGE */
 /*===============================================================================*/
 #slidecontainer_right {
-	max-width:70%;
+	max-width:50%;
+	height:1fr;
+
+	Vertical, VerticalScroll {
+		height:1fr;
+	}
 }
 ListView {
 	border:solid $primary;
@@ -17,7 +22,52 @@ Button {
 	margin-right:1;
 	margin-left:1;
 }
+Horizontal, VerticalScroll, Vertical {
+	height:auto;
+}
 
+
+/*LAYOUT MAIN CONTAINERS*/
+#vertical_column_left {
+	width:40%;
+	margin-right:5;
+	margin-left:5;
+	margin-top:1;
+}
+#vertical_column_right {
+	margin-right:5;
+}
+/*SCRAPPING DATA LABELS LAYOUT AND STYLE*/
+#horizontal_scrapping_informations {
+	#horizontal_scrapping_left {
+		width:60%;
+
+		Label {
+			text-align:center;
+
+			border:$secondary;
+			border-top: hkey $secondary-lighten-2;
+			border-bottom: hkey $secondary-darken-1;
+
+			background:$secondary;
+
+			margin-right:5;
+			width:20%;
+		}
+	}
+	padding-top:1;
+	padding-bottom:1;
+}
+
+/*POST CONTAINER */
+#vertical_post_container {
+	height:1fr;
+	border-top: double $primary;
+	border-title-align:left;
+	border-title-style:bold italic;
+}
+
+/*SCRAPPING DISPLAYED POST LAYOUT*/
 Bentham_Modal_PostFormatting {
 	Collapsible {
 		margin-top:1;
