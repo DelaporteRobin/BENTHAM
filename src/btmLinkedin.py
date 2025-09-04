@@ -35,12 +35,18 @@ from textual.widget import AwaitMount, Widget
 from textual.binding import Binding
 from textual.geometry import clamp
 
+
 from termcolor import *
 from rich.console import Console
 from rich import print as rprint
 from time import sleep
 from datetime import datetime 
+from groq import Groq 
 
+from src.btmAI import BenthamGroq
+
+import ast
+import groq
 import traceback
 import pyperclip
 import json
@@ -176,9 +182,14 @@ class BenthamLINKEDIN:
 					self.call_from_thread(self.display_message, "Trying to load cookies in driver...")
 					try:
 						#load cookies
-						
+						"""
 						for cookie in self.user_data["LinkedinCookies"]:
+							self.call_from_thread(self.display_message, f"  Cookie loaded [{list(self.user_data["LinkedinCookies"].keys()).index(cookie)} / {len(list(self.user_data["LinkedinCookies"].keys()))}]")
 							self.driver_linkedin_scrapping.add_cookie(cookie)
+						"""
+						for i in range(len(self.user_data["LinkedinCookies"])):
+							self.call_from_thread(self.display_message, f"  Cookie loaded [ {i} / {len(self.user_data["LinkedinCookies"])} ]")
+							self.driver_linkedin_scrapping.add_cookie(self.user_data["LinkedinCookies"][i])
 						self.driver_linkedin_scrapping.refresh()
 						#enter user credentials and try to log in
 						"""
@@ -341,13 +352,48 @@ class BenthamLINKEDIN:
 				post_text = "\n".join(post_text_list)
 
 				#CHECK FOR CONTENT IN POST
-				if self.check_post_content_function(post_text)==False:
-					self.call_from_thread(self.display_message, "No keyword found in post → Skipped", "notification")
-					continue
-				elif self.check_post_content_function(post_text)==True:
-					self.call_from_thread(self.display_message, "Keyword detected in post", "success")
+				if self.user_data["LinkedinUseAI"]==False:
+					if self.check_post_content_function(post_text)==False:
+						self.call_from_thread(self.display_message, "No keyword found in post → Skipped", "notification")
+						continue
+					elif self.check_post_content_function(post_text)==True:
+						self.call_from_thread(self.display_message, "Keyword detected in post", "success")
+					else:
+						self.call_from_thread(self.display_message, "Impossible to check for keywords in post", "warning")
 				else:
-					self.call_from_thread(self.display_message, "Impossible to check for keywords in post", "warning")
+					#PROMPT THE GROQ CLASS
+					try:
+						callinggroq = BenthamGroq(api_key = self.user_data["GroqAPIKey"], post_content=post_text, user_skills = self.user_data["LinkedinUserSkills"])
+						callinggroq_output = callinggroq.run()
+					except Exception as e:
+						self.call_from_thread(self.display_message, f"Impossible to call AI for scrapping\n{traceback.format_exc()}", "error")
+						return
+					else:
+						#self.call_from_thread(self.display_message, f"Output from AI\n{callinggroq_output}")
+						#try to convert the returned dictionnary into real python dictionnary
+						try:
+							groq_output_dictionnary = ast.literal_eval(callinggroq_output)
+							#create assertion for dictionnary
+							assert type(groq_output_dictionnary) == dict, f"Groq output isn't a python dictionnary\n{groq_output_dictionnary}\n{type(groq_output_dictionnary)}"
+							assert "is_matching" in groq_output_dictionnary, "Impossible to access data in dictionnary"
+							assert "job_searched" in groq_output_dictionnary, "Impossible to access data in dictionnary"
+						 
+						except Exception as e:
+							self.call_from_thread(self.display_message, callinggroq_output)
+							#self.call_from_thread(self.display_message, groq_output_dictionnary)
+							self.call_from_thread(self.display_message, f"Failed to convert groq output into dictionnary\n{callinggroq_output}\n{traceback.format_exc()}", "error")
+							continue
+						except AssertionError as e:
+							self.call_from_thread(self.display_message, e, "error")
+							continue
+						else:
+							#check informations in dictionnary
+							self.call_from_thread(self.display_message, f"Output from GROQ\nPosition researched : {groq_output_dictionnary["job_searched"]}\nPost matching skills : {groq_output_dictionnary["is_matching"]}")
+							if groq_output_dictionnary["is_matching"]==False:
+								self.call_from_thread(self.display_message, "This post doesn't match with your request", "notification")
+								continue
+							else:
+								self.call_from_thread(self.display_message, "Matching post detected", "success")
 				#GET SHARED POST CONTENT
 				post_shared = post.find_elements(By.CSS_SELECTOR, "div.feed-shared-update-v2__update-content-wrapper")
 				post_shared_text = None

@@ -76,6 +76,23 @@ class BenthamGUI:
 	def update_lobby_informations(self):
 		self.display_message("Updating informations in Lobby", "notification")
 		#check for user credentials in user settings
+		if "GroqAPIKey" in self.user_data:
+			self.input_groq_apikey.value = self.user_data["GroqAPIKey"]
+		if "LinkedinUseAI" in self.user_data:
+			self.checkbox_use_groq.value = self.user_data["LinkedinUseAI"]
+		if "MaxSavedDisplay" in self.user_data:
+			self.input_max_saved.value = str(self.user_data["MaxSavedDisplay"])
+		if "LinkedinUserSkills" in self.user_data:
+			if type(self.user_data["LinkedinUserSkills"]) == list:
+				#convert to str
+				user_skill_list = ";".join(self.user_data["LinkedinUserSkills"])
+			elif type(self.user_data["LinkedinUserSkills"]) == str:
+				user_skill_list = self.user_data["LinkedinUserSkills"]
+			else:
+				self.display_message("Impossible to convert user skills to list", "error")
+				return
+			self.input_user_skills.value = user_skill_list
+
 		if ("LinkedinMail" in self.user_data) and ("LinkedinPassword" in self.user_data):
 			self.display_message("Personnal linkedin informations detected in user data", "message")
 			self.input_linkedin_username.value = self.user_data["LinkedinMail"]

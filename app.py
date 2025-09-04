@@ -25,6 +25,8 @@ from textual.geometry import clamp
 #import external textual plugins
 from textual_pyfiglet import FigletWidget
 from textual_slidecontainer import SlideContainer
+#TEXTUAL PYFIGLET
+from textual_pyfiglet.figletwidget import FigletWidget
 
 from datetime import datetime
 from typing import Any
@@ -51,9 +53,11 @@ import copy
 class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY):
 
 	CSS_PATH = ["styles/layout.tcss"]
+	"""
 	BINDINGS = [
 		Binding("+", "binding_logs", description="Show logs", key_display="+")
 	]
+	"""
 
 	def __init__(self):
 		super().__init__()
@@ -67,6 +71,24 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 				"success":"chartreuse1",
 			}
 		)
+		self.intro_markdown = '''
+## Welcome on Bentham
+Created by **Quazar**\n
+Your personal LinkedIn feed reader.
+You can ask it to search your feed by keywords, \nor use AI to determine the relevance of a post to you.\n
+Repo available on [Github](https://github.com/DelaporteRobin/BENTHAM)
+
+> "Everything should be made as simple as possible, but not simpler"\n**Albert Einstein**
+
+If you want some help or learn more about how to use the App,
+you can go read the documentation on Notion
+
+> [!WARNING]
+> The documentation is still in progress and will soon be available :)
+
+
+ 
+'''
 		self.list_display_mode = [
 			("Sorted by relevance",0),
 			("Sorted by most recent",1)
@@ -114,33 +136,59 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 		right column → linkedin posts
 		"""
 		with Horizontal(id = "horizontal_main_container"):
-			
+			"""
 			with SlideContainer(id = "slidecontainer_right", slide_direction="right", dock_position="right", fade=True, duration=0.5, start_open=False):
 				self.listview_log = ListView(id = "listview_log")
 				yield self.listview_log
 				self.listview_log.border_title = "Application log"
+			"""
 			
 			
 			with VerticalScroll(id = "vertical_column_left"):
+				with Vertical(id = "vertical_title_container"):
+					self.figlet_app_title = FigletWidget(
+						"_-BENTHAM-_",
+						font="modular",
+						justify="left",
+						animation_type="gradient",
+						colors=["$primary", "$accent", "$panel"],
+						animate=True,
+						fps=25,
+						gradient_quality=60,
+						id = "figlet_app_title"
+						)
+					yield self.figlet_app_title
+					self.markdown_app_intro = Markdown(self.intro_markdown, id="markdown_app_intro")
+					yield self.markdown_app_intro
 				with Collapsible(title = "Global settings", id="collapsible_authentification"):
 
 					yield Label("Define your Web Browser in the list")
 					self.select_browser = Select(self.webbrowser_list)
 					yield self.select_browser
 
+					yield Rule(line_style="heavy")
+
 					yield Label("Linkedin login informations")
 					self.input_linkedin_username = Input(placeholder="Linkedin mail or phone", id="input_linkedin_username")
 					self.input_linkedin_password = Input(placeholder = "Linkedin password", password=True, id="input_linkedin_password")
-
 					yield self.input_linkedin_username
 					yield self.input_linkedin_password
 					yield Button("Get linkedin cookies", id = "button_get_cookies")
+
+					yield Rule(line_style="heavy")
+
+					#groq settings
+					yield Label("Groq AI Informations")
+					self.input_groq_apikey = Input(placeholder = "Groq Api Key", id="input_groq_apikey")
+					yield self.input_groq_apikey
 
 				with Collapsible(title = "Linkedin scrapping settings",id = "collapsible_settings"):
 					#yield Button("hello world")
 					#change the linkedin display mode
 					self.select_linkedin_displaymode = Select(self.list_display_mode,id="select_linkedin_displaymode", value=1)
 					yield self.select_linkedin_displaymode
+
+					yield Rule(line_style="heavy")
 
 					self.input_min_day_value = Input(placeholder="Minimum day value", id="input_min_day_value",type="integer",value="0")
 					self.input_max_day_value = Input(placeholder="Maximum day value", id="input_max_day_value",type="integer",value="10")					
@@ -156,6 +204,10 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 					yield self.input_min_day_value
 					yield Label("Max day value",id="label_max_day_value")
 					yield self.input_max_day_value
+
+
+
+					
 					
 
 					self.checkbox_startup_mode = Checkbox("Start scrapping at startup", value=False, id="checkbox_startup_mode")
@@ -163,10 +215,16 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 
 				#keyword that are all required in the post
 				self.input_keyword_required = Input(placeholder="All required keywords", id="input_keyword_required")
-				self.input_keyword_pertinent = Input(placeholder="All keywords that might concern you",id="input_keyword_pertinent")
 
 				yield self.input_keyword_required
-				yield self.input_keyword_pertinent
+				
+				with Horizontal(id="horizontal_groq"):
+					self.checkbox_use_groq = Checkbox("Use Groq AI during scrapping", value=False, id="checkbox_use_groq")
+					yield self.checkbox_use_groq
+
+					self.input_user_skills = Input(placeholder = "Enter your professionnal skills", id = "input_user_skills", disabled=True)
+					yield self.input_user_skills
+
 				with Horizontal(id = "horizontal_column_scrapping"):
 					yield Button("START SCRAPPING", id="button_scrapping_start")
 					yield Button("STOP SCRAPPING", id="button_scrapping_stop")
@@ -174,29 +232,34 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 
 
 			with VerticalScroll(id = "vertical_column_right"):
-				#yield Label("Linkedin posts")
-				with Horizontal(id = "horizontal_scrapping_informations"):
-					"""
-					scrapping informations to display
-						number of displayed posts
-						number of saved post (in file)
-						number of checked post in file (total)
-					"""
-					with Horizontal(id = "horizontal_scrapping_left"):
-						self.label_counter_displayed = Label("",id="label_counter_displayed")
-						self.label_counter_saved = Label("",id="label_counter_saved")
-						self.label_counter_checked = Label("",id="label_counter_checked")
-						yield self.label_counter_displayed
-						yield self.label_counter_saved
-						yield self.label_counter_checked
-					with Vertical(id = "horizontal_scrapping_right"):
-						yield Label("Maximum saved post(s) displayed",id="label_display_post_title")
-						self.input_max_saved = Input(placeholder="Maximum saved post",type="integer",id="input_max_saved", value=str(self.user_data["MaxSavedDisplay"]))
-						yield self.input_max_saved
-				
-				self.vertical_post_container = VerticalScroll(id = "vertical_post_container")
-				yield self.vertical_post_container
-
+				with TabbedContent():
+					with TabPane("SCRAPPING VIEW"):
+						#yield Label("Linkedin posts")
+						with Horizontal(id = "horizontal_scrapping_informations"):
+							"""
+							scrapping informations to display
+								number of displayed posts
+								number of saved post (in file)
+								number of checked post in file (total)
+							"""
+							with Horizontal(id = "horizontal_scrapping_left"):
+								self.label_counter_displayed = Label("",id="label_counter_displayed")
+								self.label_counter_saved = Label("",id="label_counter_saved")
+								self.label_counter_checked = Label("",id="label_counter_checked")
+								yield self.label_counter_displayed
+								yield self.label_counter_saved
+								yield self.label_counter_checked
+							with Vertical(id = "horizontal_scrapping_right"):
+								yield Label("Maximum saved post(s) displayed",id="label_display_post_title")
+								self.input_max_saved = Input(placeholder="Maximum saved post",type="integer",id="input_max_saved", value=str(self.user_data["MaxSavedDisplay"]))
+								yield self.input_max_saved
+						
+						self.vertical_post_container = VerticalScroll(id = "vertical_post_container")
+						yield self.vertical_post_container
+					with TabPane("LOG VIEW"):
+						self.listview_log = ListView(id = "listview_log")
+						yield self.listview_log
+						self.listview_log.border_title = "Application log"
 		yield Footer()
 
 	#NOTIFICATION FUNCTION
@@ -250,9 +313,10 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 		
 
 	#BINDINGS FUNCTION
-	
+	"""
 	def action_binding_logs(self) -> None:
 		self.query_one("#slidecontainer_right").toggle()
+	"""
 	
 
 	def on_mount(self) -> None:
@@ -272,6 +336,10 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 		
 
 	def on_checkbox_changed(self, event:Checkbox.Changed) -> None:
+		if event.checkbox.id == "checkbox_use_groq":
+			self.input_user_skills.disabled = not self.checkbox_use_groq.value
+			self.user_data["LinkedinUseAI"] = self.checkbox_use_groq.value
+			self.save_user_data_function()
 		if event.checkbox.id == "checkbox_startup_mode":
 			if self.checkbox_startup_mode.value==True:
 				#create the task for the autorun
@@ -284,6 +352,27 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 			self.save_user_data_function()
 
 	def on_input_submitted(self, event:Input.Submitted) -> None:
+		if event.input.id == "input_user_skills":
+			#split all user variables
+			
+			if self.check_letter_function(self.input_user_skills.value)==False:
+				self.display_message("You must enter skills", "error")
+				return
+			user_skills = self.input_user_skills.value.split(";")
+			self.user_data["LinkedinUserSkills"] = user_skills
+			self.save_user_data_function()
+			self.display_message("User skills saved successfully", "success")
+
+		if event.input.id == "input_groq_apikey":
+			#check if the key is empty or not
+			if self.check_letter_function(self.input_groq_apikey.value)==False:
+				self.display_message("You must enter an API Key to save", "error")
+				return
+			else:
+				self.user_data["GroqAPIKey"] = self.input_groq_apikey.value
+				self.save_user_data_function()
+				self.display_message(f"Groq api key saved successfully : {self.user_data["GroqAPIKey"]}", "success")
+
 		if event.input.id == "input_max_saved":
 			self.user_data["MaxSavedDisplay"] = int(self.input_max_saved.value)
 			self.save_user_data_function()

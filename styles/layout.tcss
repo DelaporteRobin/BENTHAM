@@ -33,9 +33,50 @@ Horizontal, VerticalScroll, Vertical {
 	margin-right:5;
 	margin-left:5;
 	margin-top:1;
+	padding-right:5;
+
+	border-right:dashed $primary;
+	height:1fr;
+
+	#vertical_title_container {
+		border:round $secondary-darken-1;
+		margin-bottom:2;
+	}
+	Collapsible {
+		margin-bottom:1;
+	}
+
+	#horizontal_groq {
+		Checkbox {
+			width:40%;
+		}
+		Input {
+			width:60%;
+		}
+	}
+
+	#button_scrapping_start, #button_scrapping_stop {
+		margin:1;
+		margin-top:5;
+		padding:1;
+	}
+	#button_scrapping_stop {
+		background:$error-darken-1;
+		border-bottom:thick $error-darken-3;
+		border-top:thick $error-lighten-1;
+	}
+	#button_scrapping_start {
+		background:$success-darken-1;
+		border-bottom:thick $success-darken-3;
+		border-top:thick $success-lighten-1;
+	}
 }
 #vertical_column_right {
 	margin-right:5;
+
+	ListView {
+		height:1fr;
+	}
 }
 /*SCRAPPING DATA LABELS LAYOUT AND STYLE*/
 #horizontal_scrapping_informations {

@@ -36,7 +36,7 @@ try:
 	from src.btmUser import BenthamUSER
 	from styles.theme_file import *
 except Exception:
-	print(colored("Failed to import modules", "red"))
+	print(colored(f"Failed to import modules\n{traceback.format_exc()}", "red"))
 	os.system("pause")
 	exit()
 else:
