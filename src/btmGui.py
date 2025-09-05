@@ -76,12 +76,22 @@ class BenthamGUI:
 	def update_lobby_informations(self):
 		self.display_message("Updating informations in Lobby", "notification")
 		#check for user credentials in user settings
+		if "BrowserDifferent" in self.user_data:
+			self.checkbox_custom_browser.value = self.user_data["BrowserDifferent"]
+		if "BrowserExecutable" in self.user_data:
+			self.input_custom_browser.value = self.user_data["BrowserExecutable"]
 		if "GroqAPIKey" in self.user_data:
 			self.input_groq_apikey.value = self.user_data["GroqAPIKey"]
 		if "LinkedinUseAI" in self.user_data:
 			self.checkbox_use_groq.value = self.user_data["LinkedinUseAI"]
 		if "MaxSavedDisplay" in self.user_data:
 			self.input_max_saved.value = str(self.user_data["MaxSavedDisplay"])
+		if ("KeywordExcluded" in self.user_data) and (type(self.user_data["KeywordExcluded"])==list):
+			self.input_keyword_exclude.value = ";".join(self.user_data["KeywordExcluded"])
+		if ("LinkedinUserSkillsExclude" in self.user_data) and (type(self.user_data["LinkedinUserSkillsExclude"])==list):
+			self.input_user_exclude_skills.value = ";".join(self.user_data["LinkedinUserSkillsExclude"])
+		if ("LinkedinUserLocation" in self.user_data) and (type(self.user_data["LinkedinUserLocation"])==list):
+			self.input_user_location.value = ";".join(self.user_data["LinkedinUserLocation"])
 		if "LinkedinUserSkills" in self.user_data:
 			if type(self.user_data["LinkedinUserSkills"]) == list:
 				#convert to str
@@ -175,7 +185,8 @@ class BenthamGUI:
 									post_to_mount = self.scrapping_post_container[index]
 									self.call_from_thread(self.display_message, f"post detected : {index}")
 								except Exception as e:
-									self.call_from_thread(self.display_message, f"Impossible to mount post : {e}", "notification")
+									#self.call_from_thread(self.display_message, f"Impossible to mount post : {e}", "notification")
+									pass
 								else:
 									#mount the post and add it to the displayed post list
 									self.call_from_thread(self.vertical_post_container.mount, post_to_mount)

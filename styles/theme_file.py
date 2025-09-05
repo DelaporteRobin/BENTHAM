@@ -58,4 +58,18 @@ NEON_THEME = Theme(
 	error = "#ff562c"
 	)
 
-THEME_REGISTRY = [DOWNTOWN_THEME, WINE_THEME, OFFICE_THEME, NEON_THEME]
+ALERT_THEME = Theme(
+	name="alert",
+	background="#161617",
+	primary="#FF2F0F",
+	secondary="#C92112",
+	foreground="white",
+	accent="#FFBB69",
+	surface="#0F0F0F",
+	panel="#961A1A",
+	success="#71DE71",
+	warning="#FF8940",
+	error="#FF2F0F"
+	)
+
+THEME_REGISTRY = [ALERT_THEME, DOWNTOWN_THEME, WINE_THEME, OFFICE_THEME, NEON_THEME]

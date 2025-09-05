@@ -42,6 +42,7 @@ from rich import print as rprint
 from time import sleep
 from datetime import datetime 
 from groq import Groq 
+from groq import RateLimitError
 
 from src.btmAI import BenthamGroq
 
@@ -66,17 +67,35 @@ class BenthamLINKEDIN:
 		driver_path = os.path.normpath(os.path.join(os.getcwd(), "drivers/chromedriver-win64/chromedriver.exe"))
 		#launch a browser with linkedin login page
 		chrome_options = Options()
+		chrome_options.add_argument("--window-size=1920,1080")
+		chrome_options.add_argument("--disable-gpu")
+
+		if ("BrowserExecutable" in self.user_data) and ("BrowserDifferent" in self.user_data):
+			#replace the browser in driver settings
+			if self.user_data["BrowserDifferent"]==True:	
+				chrome_options.binary_location = self.user_data["BrowserExecutable"]
+				self.call_from_thread(self.display_message, f"Browser executable replaced : {self.user_data["BrowserExecutable"]}")
 		#chrome_options.binary_location = browser_path
 		#chrome_options.add_argument("--headless")
 		#service = Service(driver_path)
 		#chrome_options.add_argument("--disable-gpu")
 		#chrome_options.add_argument("--window-size=1920,1080")
+		#GET THE DRIVER FOR CHROMIUM
+		driver_path = os.path.normpath(os.path.join(os.getcwd(), "drivers/chromedriver-win64/chromedriver.exe"))
+		if os.path.isfile(driver_path)==True:
+			self.call_from_thread(self.display_message, "Web browser driver found...", "notification")
+			service = Service(driver_path)
+			self.driver_linkedin_scrapping = webdriver.Chrome(options = chrome_options, service=service)
+		else:
+			self.call_from_thread(self.display_message, "Impossible to find Web browser drivers", "error")
+			self.driver_linkedin_scrapping = webdriver.Chrome(options = chrome_options)
 		
-
 		#driver = webdriver.Chrome(options=chrome_options, service=service)
-		driver = webdriver.Chrome(options=chrome_options)
+		#driver = webdriver.Chrome(options=chrome_options)
 		driver.get("https://linkedin.com/login")
 		#enter informations
+		
+
 		username_input = driver.find_element(By.ID, "username")
 		password_input = driver.find_element(By.ID, "password")
 		username_input.send_keys(username)
@@ -156,11 +175,6 @@ class BenthamLINKEDIN:
 				else:
 					self.call_from_thread(self.display_message, "Impossible to find Web browser drivers", "error")
 					self.driver_linkedin_scrapping = webdriver.Chrome(options = chrome_options)
-				
-
-				
-				#init the driver
-				
 				
 				connected=False
 				for i in range(50):
@@ -351,10 +365,12 @@ class BenthamLINKEDIN:
 				#join post_text_list
 				post_text = "\n".join(post_text_list)
 
+				self.call_from_thread(self.display_message, f"\nLinkedin post content\n{post_text}", "message", False)
 				#CHECK FOR CONTENT IN POST
 				if self.user_data["LinkedinUseAI"]==False:
+					#check if keyword are in the post text
 					if self.check_post_content_function(post_text)==False:
-						self.call_from_thread(self.display_message, "No keyword found in post → Skipped", "notification")
+						self.call_from_thread(self.display_message, "Post skipped", "notification")
 						continue
 					elif self.check_post_content_function(post_text)==True:
 						self.call_from_thread(self.display_message, "Keyword detected in post", "success")
@@ -363,8 +379,22 @@ class BenthamLINKEDIN:
 				else:
 					#PROMPT THE GROQ CLASS
 					try:
-						callinggroq = BenthamGroq(api_key = self.user_data["GroqAPIKey"], post_content=post_text, user_skills = self.user_data["LinkedinUserSkills"])
+						callinggroq = BenthamGroq(api_key = self.user_data["GroqAPIKey"], post_content=post_text, user_skills = self.user_data["LinkedinUserSkills"], user_location = self.user_data["LinkedinUserLocation"], user_skills_excluded = self.user_data["LinkedinUserSkillsExclude"])
 						callinggroq_output = callinggroq.run()
+					except RateLimitError:
+						self.call_from_thread(self.display_message, f"Token limit reached, You can't use Groq AI right now\nPlease try again later", "error")
+						self.call_from_thread(self.display_message, '"Use Ai" value changed → Switched to keyword detection', "notification")
+						#try to disable enable and change settings
+						self.user_data["LinkedinUseAI"]=False 
+						#change checkbox value
+						try:
+							self.checkbox_use_groq.value=False 
+						except AttributeError:
+							pass
+						#save user settings
+						self.save_user_data_function()
+						#start the loop over after disabling ai model
+						continue
 					except Exception as e:
 						self.call_from_thread(self.display_message, f"Impossible to call AI for scrapping\n{traceback.format_exc()}", "error")
 						return
@@ -377,7 +407,7 @@ class BenthamLINKEDIN:
 							assert type(groq_output_dictionnary) == dict, f"Groq output isn't a python dictionnary\n{groq_output_dictionnary}\n{type(groq_output_dictionnary)}"
 							assert "is_matching" in groq_output_dictionnary, "Impossible to access data in dictionnary"
 							assert "job_searched" in groq_output_dictionnary, "Impossible to access data in dictionnary"
-						 
+											 
 						except Exception as e:
 							self.call_from_thread(self.display_message, callinggroq_output)
 							#self.call_from_thread(self.display_message, groq_output_dictionnary)
@@ -480,6 +510,12 @@ class BenthamLINKEDIN:
 	def check_post_content_function(self, content):
 		#get the keywords to check in settings
 		self.call_from_thread(self.display_message, content)
+		if ("KeywordExcluded" in self.user_data) and (type(self.user_data["KeywordExcluded"])==list):
+			for keyword in self.user_data["KeywordExcluded"]:
+				if (keyword.upper() in content) or (keyword.lower() in content) or (keyword.capitalize() in content):
+					self.call_from_thread(self.display_message, f"  Excluded keyword found : {keyword}", "error")
+					return False
+
 		if ("KeywordRequired") not in self.user_data:
 			self.call_from_thread(self.display_message, "Impossible to check for keywords","warning")
 			return None

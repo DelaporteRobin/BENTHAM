@@ -13,7 +13,11 @@
 	}
 }
 ListView {
-	border:solid $primary;
+	background:$background;
+}
+ListView:focus {
+	background:$background;
+	background-tint:$background;
 }
 Button {
 	width: 1fr;
@@ -30,28 +34,55 @@ Horizontal, VerticalScroll, Vertical {
 /*LAYOUT MAIN CONTAINERS*/
 #vertical_column_left {
 	width:40%;
+	margin-top:3;
+	margin-bottom:2;
 	margin-right:5;
 	margin-left:5;
-	margin-top:1;
-	padding-right:5;
-
-	border-right:dashed $primary;
 	height:1fr;
 
+	#input_keyword_required, #input_keyword_exclude {
+		margin-right:2;
+	}
 	#vertical_title_container {
 		border:round $secondary-darken-1;
 		margin-bottom:2;
+		margin-right:2;
 	}
 	Collapsible {
+		margin-right:2;
+		CollapsibleTitle {
+			color:$foreground;
+		}
+		background:$panel;
 		margin-bottom:1;
+
+		SelectCurrent {
+			background:$background;
+			border:tall $primary-darken-1;
+		}
+		Checkbox, Input {
+			background:$panel-darken-2;
+			border:tall $panel-darken-3;
+		}
+		Button {
+			background:$primary;
+			border-top:hkey $primary-lighten-3;
+			border-bottom:hkey $primary-darken-3;
+		}
 	}
 
 	#horizontal_groq {
+		margin-right:2;
 		Checkbox {
 			width:40%;
 		}
 		Input {
 			width:60%;
+		}
+		#verticalscroll_groq {
+			Input {
+				width:1fr;
+			}
 		}
 	}
 
@@ -66,12 +97,13 @@ Horizontal, VerticalScroll, Vertical {
 		border-top:thick $error-lighten-1;
 	}
 	#button_scrapping_start {
-		background:$success-darken-1;
-		border-bottom:thick $success-darken-3;
-		border-top:thick $success-lighten-1;
+		background:$panel-darken-1;
+		border-bottom:thick $panel-darken-3;
+		border-top:thick $panel-lighten-1;
 	}
 }
 #vertical_column_right {
+	margin-top:1;
 	margin-right:5;
 
 	ListView {
@@ -111,6 +143,8 @@ Horizontal, VerticalScroll, Vertical {
 /*SCRAPPING DISPLAYED POST LAYOUT*/
 Bentham_Modal_PostFormatting {
 	Collapsible {
+		border:tall $surface-darken-1;
+		background:$surface;
 		margin-top:1;
 		margin-right:1;
 		height:auto;
@@ -119,9 +153,6 @@ Bentham_Modal_PostFormatting {
 			color: $accent;
 			border:red;
 			width:100%;
-		}
-		Markdown {
-			border:green;
 		}
 	
 	}

@@ -41,6 +41,9 @@ from src.btmUser import BenthamUSER
 from src.btmGui import BenthamGUI
 from src.btmUtility import BenthamUTILITY
 
+#import color themes
+from styles.theme_file import *
+
 import re
 import multiprocessing as mp 
 import threading
@@ -61,9 +64,22 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 
 	def __init__(self):
 		super().__init__()
+		#load color themes
+		self.THEME_REGISTRY = THEME_REGISTRY
+		self.THEME_DICTIONNARY = None
+		self.THEME= "alert"
+		for theme in self.THEME_REGISTRY:
+			self.register_theme(theme)
+			if theme.name == self.THEME:
+				self.THEME_DICTIONNARY = theme 
+		self.theme = self.THEME
+		
+
 		#init user program before creating main interface
+		"""
 		self.rich_theme = Theme(
 			{
+
 				"general":"dark_violet",
 				"info":"yellow",
 				"warning":"orange3",
@@ -71,6 +87,9 @@ class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY
 				"success":"chartreuse1",
 			}
 		)
+		#create the rich console
+		self.console = Console(theme=self.rich_theme)
+		"""
 		self.intro_markdown = '''
 ## Welcome on Bentham
 Created by **Quazar**\n
@@ -97,8 +116,7 @@ you can go read the documentation on Notion
 			("Brave",1),
 			("Chrome",2),
 			]
-		#create the rich console
-		self.console = Console(theme=self.rich_theme)
+		
 		#user informations here
 		self.user_data = {
 			"MinDayValue":0,
@@ -146,12 +164,19 @@ you can go read the documentation on Notion
 			
 			with VerticalScroll(id = "vertical_column_left"):
 				with Vertical(id = "vertical_title_container"):
+					"""
+					INTERESTING FRONTS
+					modular
+					ansi_shadow
+					ansi
+					the_edge
+					"""
 					self.figlet_app_title = FigletWidget(
 						"_-BENTHAM-_",
 						font="modular",
-						justify="left",
+						justify="center",
 						animation_type="gradient",
-						colors=["$primary", "$accent", "$panel"],
+						colors=["$primary", "$error", "$warning", "$panel"],
 						animate=True,
 						fps=25,
 						gradient_quality=60,
@@ -162,9 +187,11 @@ you can go read the documentation on Notion
 					yield self.markdown_app_intro
 				with Collapsible(title = "Global settings", id="collapsible_authentification"):
 
-					yield Label("Define your Web Browser in the list")
-					self.select_browser = Select(self.webbrowser_list)
-					yield self.select_browser
+					self.checkbox_custom_browser = Checkbox("Use a custom browser", id="checkbox_custom_browser", value=False)
+					yield self.checkbox_custom_browser
+
+					self.input_custom_browser = Input(placeholder="Custom browser executable path", id="input_custom_browser", disabled=True)
+					yield self.input_custom_browser
 
 					yield Rule(line_style="heavy")
 
@@ -215,15 +242,24 @@ you can go read the documentation on Notion
 
 				#keyword that are all required in the post
 				self.input_keyword_required = Input(placeholder="All required keywords", id="input_keyword_required")
+				self.input_keyword_exclude = Input(placeholder = "All excluded keywords", id="input_keyword_exclude")
 
 				yield self.input_keyword_required
+				yield self.input_keyword_exclude
+
+				yield Rule(line_style="heavy")
 				
 				with Horizontal(id="horizontal_groq"):
 					self.checkbox_use_groq = Checkbox("Use Groq AI during scrapping", value=False, id="checkbox_use_groq")
 					yield self.checkbox_use_groq
 
-					self.input_user_skills = Input(placeholder = "Enter your professionnal skills", id = "input_user_skills", disabled=True)
-					yield self.input_user_skills
+					with VerticalScroll(id="verticalscroll_groq"):
+						self.input_user_skills = Input(placeholder = "Enter your professionnal skills", id = "input_user_skills", disabled=True)
+						self.input_user_exclude_skills = Input(placeholder = "Excluded skills", id="input_user_exclude_skills", disabled=True)
+						self.input_user_location = Input(placeholder = "Job location", id="input_user_location", disabled=True)
+						yield self.input_user_skills
+						yield self.input_user_exclude_skills
+						yield self.input_user_location 
 
 				with Horizontal(id = "horizontal_column_scrapping"):
 					yield Button("START SCRAPPING", id="button_scrapping_start")
@@ -336,8 +372,14 @@ you can go read the documentation on Notion
 		
 
 	def on_checkbox_changed(self, event:Checkbox.Changed) -> None:
+		if event.checkbox.id == "checkbox_custom_browser":
+			self.input_custom_browser.disabled = not self.checkbox_custom_browser.value
+			self.user_data["BrowserDifferent"] = self.checkbox_custom_browser.value
+			self.save_user_data_function()
 		if event.checkbox.id == "checkbox_use_groq":
 			self.input_user_skills.disabled = not self.checkbox_use_groq.value
+			self.input_user_exclude_skills.disabled = not self.checkbox_use_groq.value 
+			self.input_user_location.disabled = not self.checkbox_use_groq.value
 			self.user_data["LinkedinUseAI"] = self.checkbox_use_groq.value
 			self.save_user_data_function()
 		if event.checkbox.id == "checkbox_startup_mode":
@@ -352,6 +394,36 @@ you can go read the documentation on Notion
 			self.save_user_data_function()
 
 	def on_input_submitted(self, event:Input.Submitted) -> None:
+		if event.input.id == "input_custom_browser":
+			#check if there is something in the field
+			if self.check_letter_function(self.input_custom_browser.value)==False:
+				self.display_message("You must enter a filepath in this field","error")
+				return
+			elif os.path.isfile(self.input_custom_browser.value)==False:
+				self.display_message("This filepath doesn't exists", "error")
+				return
+			else:
+				#save the path in the user settings
+				self.user_data["BrowserExecutable"] = self.input_custom_browser.value
+				self.save_user_data_function()
+				self.display_message("Custom browser executable saved", "success")
+		if event.input.id in ["input_user_skills", "input_user_location", "input_user_exclude_skills"]:
+			#get the content of the input field
+			field_value_splited = self.query_one(f"#{event.input.id}").value.split(";")
+			parsed_value_splited = []
+			for element in field_value_splited:
+				if self.check_letter_function(element)==True:
+					parsed_value_splited.append(element)
+			if event.input.id == "input_user_skills":
+				self.user_data["LinkedinUserSkills"] = parsed_value_splited 
+			elif event.input.id == "input_user_location":
+				self.user_data["LinkedinUserLocation"] = parsed_value_splited
+			else:
+				self.user_data["LinkedinUserSkillsExclude"] = parsed_value_splited
+			self.save_user_data_function()
+			self.display_message("Groq prompting informations saved in user data", "success")
+
+		"""
 		if event.input.id == "input_user_skills":
 			#split all user variables
 			
@@ -362,6 +434,7 @@ you can go read the documentation on Notion
 			self.user_data["LinkedinUserSkills"] = user_skills
 			self.save_user_data_function()
 			self.display_message("User skills saved successfully", "success")
+		"""
 
 		if event.input.id == "input_groq_apikey":
 			#check if the key is empty or not
@@ -416,6 +489,20 @@ you can go read the documentation on Notion
 			self.user_data["KeywordRequired"]=table_keyword_required
 			#save list in user data
 			self.save_user_data_function()
+
+		if event.input.id == "input_keyword_exclude":
+			#split the keyword list
+			splited_exclude = self.input_keyword_exclude.value.split(";")
+			parsed_keyword_list = []
+			for element in splited_exclude:
+				if self.check_letter_function(element)==True:
+					parsed_keyword_list.append(element)
+			if len(parsed_keyword_list) != 0:
+				self.user_data["KeywordExcluded"] = parsed_keyword_list
+				self.save_user_data_function()
+				self.display_message("Excluded word list saved", "success")
+			else:
+				self.display_message("No word detected in list", "error")
 		
 	def on_button_pressed(self, event:Button.Pressed) -> None:
 		if event.button.id == "button_get_cookies":
