@@ -16,3 +16,12 @@ Enjoy
 
 You can access the documentation : here
 
+
+## Next features to develop
+- [ ] Target specific studio account on linkedin for scrapping (priority on the overall feed)
+- [ ] Improve prompting (if necessary → test efficiency before)
+- [ ] Add a pertinency level on saved posts (color changes for collapsible headers)
+- [ ] Write the documentation lol :)
+- [ ] Improve starting at startup
+- [ ] Add a loop waiting for connection (to prevent connection timeout error for startup version)
+
