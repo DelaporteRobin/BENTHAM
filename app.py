@@ -357,10 +357,13 @@ you can go read the documentation on Notion
 
 	def on_mount(self) -> None:
 		self.display_message("Welcome in Bentham", "notification")
+		self.display_message(" ","message",False)
+
 		#create a title to the vertical column
 		self.query_one("#vertical_post_container").border_title = "  LINKEDIN SAVED POST(S)  "
 		
-
+		#watch for theme changes
+		self.watch(self.app, "theme", self.on_theme_change, init=False)
 		#load user data
 		self.load_user_data_function()
 		self.load_scrapping_data_function()
@@ -369,6 +372,14 @@ you can go read the documentation on Notion
 		#launch the thread to read scrapping live
 		self.thread_display_scrapping = threading.Thread(target=self.display_scrapping_function, args=(), daemon=True)
 		self.thread_display_scrapping.start()
+
+	def on_theme_change(self, old_value:str, new_value:str) -> None:
+		# Called when app.theme changes.
+		self.display_message(f"Application theme changed from [{old_value}] to [{new_value}]")
+		#save the new application theme in the user data file
+		self.user_data["ApplicationTheme"] = new_value
+		self.save_user_data_function()
+
 		
 
 	def on_checkbox_changed(self, event:Checkbox.Changed) -> None:

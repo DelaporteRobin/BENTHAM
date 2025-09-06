@@ -7,7 +7,6 @@ By indicating your specialties and those you are not proficient in, Bentham will
 
 You can even set it up as an automatic Windows task that launches when you start your computer.
 
-Translated with DeepL.com (free version)
 
 > For you little rascals out there, I hope you find this useful and put it to good use :)
 
@@ -16,3 +15,4 @@ Enjoy
 **QUAZAR**
 
 You can access the documentation : here
+

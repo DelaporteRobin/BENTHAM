@@ -74,6 +74,15 @@ class Bentham_Modal_PostFormatting(Static):
 
 class BenthamGUI:
 	def update_lobby_informations(self):
+		if "ApplicationTheme" in self.user_data:
+			self.display_message("Applying theme in application", "notification")
+			try:
+				self.THEME = self.user_data["ApplicationTheme"]
+				self.theme = self.THEME
+			except Exception as e:
+				self.display_message(f"Impossible to apply theme\n{traceback.format_exc}", "error")
+			else:
+				self.display_message(f"Theme applied successfully → {self.user_data["ApplicationTheme"]}", "green")
 		self.display_message("Updating informations in Lobby", "notification")
 		#check for user credentials in user settings
 		if "BrowserDifferent" in self.user_data:
