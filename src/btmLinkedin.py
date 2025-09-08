@@ -69,6 +69,8 @@ class BenthamLINKEDIN:
 		chrome_options = Options()
 		chrome_options.add_argument("--window-size=1920,1080")
 		chrome_options.add_argument("--disable-gpu")
+		if ("BrowserHeadless" in self.user_data) and (self.user_data["BrowserHeadless"]==True):
+			chrome_options.add_argument("--headless")
 
 		if ("BrowserExecutable" in self.user_data) and ("BrowserDifferent" in self.user_data):
 			#replace the browser in driver settings
@@ -76,7 +78,7 @@ class BenthamLINKEDIN:
 				chrome_options.binary_location = self.user_data["BrowserExecutable"]
 				self.call_from_thread(self.display_message, f"Browser executable replaced : {self.user_data["BrowserExecutable"]}")
 		#chrome_options.binary_location = browser_path
-		#chrome_options.add_argument("--headless")
+		
 		#service = Service(driver_path)
 		#chrome_options.add_argument("--disable-gpu")
 		#chrome_options.add_argument("--window-size=1920,1080")
@@ -155,9 +157,10 @@ class BenthamLINKEDIN:
 				#launch a browser with linkedin login page
 				chrome_options = Options()
 				#DEFAULT BROWSER OPTIONS
-				#chrome_options.add_argument("--headless")
 				chrome_options.add_argument("--window-size=1920,1080")
 				chrome_options.add_argument("--disable-gpu")
+				if ("BrowserHeadless" in self.user_data) and (self.user_data["BrowserHeadless"]==True):
+					chrome_options.add_argument("--headless")
 				if ("BrowserExecutable" in self.user_data) and ("BrowserDifferent" in self.user_data):
 					#replace the browser in driver settings
 					if self.user_data["BrowserDifferent"]==True:	

@@ -14,7 +14,7 @@ Enjoy
 
 **QUAZAR**
 
-You can access the documentation : here
+You can access the documentation : [Here](https://www.notion.so/BENTHAM-DOCUMENTATION-265f29fde0e380159f4ee8d27ddfdfa7?source=copy_link)
 
 
 ## Next features to develop
@@ -22,6 +22,6 @@ You can access the documentation : here
 - [ ] Improve prompting (if necessary → test efficiency before)
 - [ ] Add a pertinency level on saved posts (color changes for collapsible headers)
 - [ ] Write the documentation lol :)
-- [ ] Improve starting at startup
+- [ ] Improve starting at startup (is it possible to use the textual theme?)
 - [ ] Add a loop waiting for connection (to prevent connection timeout error for startup version)
 

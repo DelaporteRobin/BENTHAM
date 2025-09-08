@@ -47,7 +47,7 @@ else:
 class BtmStartupApplication(BenthamLINKEDIN, BenthamUSER):
 
 	def __init__(self):
-		theme_name = "wine"
+		theme_name = "alert"
 		#elite,bloody,blocky,ansi_shadow
 		self.pyfiglet_font = "bloody"
 		#try to import the theme from file

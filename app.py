@@ -102,8 +102,8 @@ Repo available on [Github](https://github.com/DelaporteRobin/BENTHAM)
 If you want some help or learn more about how to use the App,
 you can go read the documentation on Notion
 
-> [!WARNING]
-> The documentation is still in progress and will soon be available :)
+> [!NOTE]
+> You can access the documentation [Here](https://www.notion.so/BENTHAM-DOCUMENTATION-265f29fde0e380159f4ee8d27ddfdfa7?source=copy_link)
 
 
  
@@ -187,8 +187,14 @@ you can go read the documentation on Notion
 					yield self.markdown_app_intro
 				with Collapsible(title = "Global settings", id="collapsible_authentification"):
 
-					self.checkbox_custom_browser = Checkbox("Use a custom browser", id="checkbox_custom_browser", value=False)
-					yield self.checkbox_custom_browser
+					with Horizontal(id = "horizontal_browser_settings"):
+						self.checkbox_custom_browser = Checkbox("Use a custom browser", id="checkbox_custom_browser", value=False)
+						self.checkbox_headless_browser = Checkbox("Headless browser", id="checkbox_headless_browser", value=False)
+						self.checkbox_startup_mode = Checkbox("Startup mode", id="checkbox_startup_mode", value=False)
+
+						yield self.checkbox_headless_browser
+						yield self.checkbox_custom_browser
+						yield self.checkbox_startup_mode
 
 					self.input_custom_browser = Input(placeholder="Custom browser executable path", id="input_custom_browser", disabled=True)
 					yield self.input_custom_browser
@@ -233,12 +239,6 @@ you can go read the documentation on Notion
 					yield self.input_max_day_value
 
 
-
-					
-					
-
-					self.checkbox_startup_mode = Checkbox("Start scrapping at startup", value=False, id="checkbox_startup_mode")
-					yield self.checkbox_startup_mode
 
 				#keyword that are all required in the post
 				self.input_keyword_required = Input(placeholder="All required keywords", id="input_keyword_required")
@@ -383,6 +383,9 @@ you can go read the documentation on Notion
 		
 
 	def on_checkbox_changed(self, event:Checkbox.Changed) -> None:
+		if event.checkbox.id == "checkbox_headless_browser":
+			self.user_data["BrowserHeadless"] = self.checkbox_headless_browser.value
+			self.save_user_data_function()
 		if event.checkbox.id == "checkbox_custom_browser":
 			self.input_custom_browser.disabled = not self.checkbox_custom_browser.value
 			self.user_data["BrowserDifferent"] = self.checkbox_custom_browser.value
