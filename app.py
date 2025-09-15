@@ -53,6 +53,60 @@ import traceback
 import copy
 
 
+#modal screen to ask for cookies creation
+class Modal_Bentham_AskCookies(ModalScreen, BenthamLINKEDIN, BenthamUTILITY):
+	def __init__(self):
+		self.app.display_message("hello world","success")
+		self.login_done = False
+		super().__init__()
+
+	def compose(self) -> ComposeResult:
+		with VerticalScroll(id = "modal_askcookies_vertical"):
+			self.modal_figlet_cookies = FigletWidget(
+				"SAVE COOKIES",
+				font="modular",
+				justify="center",
+				animation_type="gradient",
+				colors=["$primary", "$error", "$warning", "$panel"],
+				animate=True,
+				fps=25,
+				gradient_quality=60,
+				id = "modal_figlet_cookies"
+			)
+			yield self.modal_figlet_cookies
+			yield Label("Connect to your Linkedin Account and validate to save login cookies")
+
+			with Horizontal(id="modal_askcookies_horizontal"):
+				yield Button("Validate", id="modal_askcookies_button_validate")
+				yield Button("Cancel",id="modal_askcookies_button_cancel")
+
+	
+	def on_mount(self):
+		#self.get_linkedin_cookies_function()
+		try:
+			self.thread_get_cookies = threading.Thread(target=self.get_linkedin_cookies_function)
+			self.thread_get_cookies.start()
+			self.app.display_message("Launching thread", "success")
+		except Exception as e:
+			self.app.display_message(f"Impossible to launch driver\n{traceback.format_exc()}", "error")
+
+	def on_button_pressed(self, event:Button.Pressed) -> None:
+		if event.button.id == "modal_askcookies_button_cancel":
+			self.login_done = None
+			
+		if event.button.id == "modal_askcookies_button_validate":
+			self.login_done=True
+			sleep(1)
+
+		self.app.pop_screen()
+		self.app.uninstall_screen("Modal_Bentham_AskCookies")
+
+
+	def on_resize(self) -> None:
+		"""Handle the resize event."""
+		self.modal_figlet_cookies.refresh_size()
+
+
 class Bentham_Main(App, BenthamLINKEDIN, BenthamUSER, BenthamGUI, BenthamUTILITY):
 
 	CSS_PATH = ["styles/layout.tcss"]
@@ -201,11 +255,13 @@ you can go read the documentation on Notion
 
 					yield Rule(line_style="heavy")
 
+					"""
 					yield Label("Linkedin login informations")
 					self.input_linkedin_username = Input(placeholder="Linkedin mail or phone", id="input_linkedin_username")
 					self.input_linkedin_password = Input(placeholder = "Linkedin password", password=True, id="input_linkedin_password")
 					yield self.input_linkedin_username
 					yield self.input_linkedin_password
+					"""
 					yield Button("Get linkedin cookies", id = "button_get_cookies")
 
 					yield Rule(line_style="heavy")
@@ -342,6 +398,9 @@ you can go read the documentation on Notion
 		
 		if len(self.listview_log.children)==50:
 			self.listview_log.pop(0)
+
+		if severity in ["success", "error"]:
+			self.notify(str(message), timeout=3, severity="severity")
 		
 		#add the new item to the listview :)
 		self.listview_log.append(ListItem(label))
@@ -520,6 +579,10 @@ you can go read the documentation on Notion
 		
 	def on_button_pressed(self, event:Button.Pressed) -> None:
 		if event.button.id == "button_get_cookies":
+			#install modal screens	
+			self.install_screen(Modal_Bentham_AskCookies, name="Modal_Bentham_AskCookies")
+			self.push_screen("Modal_Bentham_AskCookies")
+			"""
 			with self.suspend():
 				value = self.get_linkedin_cookies_function()
 				if value == True:
@@ -528,6 +591,7 @@ you can go read the documentation on Notion
 					self.user_data["LinkedinPassword"] = self.input_linkedin_password.value
 					self.save_user_data_function()
 				os.system("pause")
+			"""
 
 		if event.button.id == "button_scrapping_start":
 			#start a threading event

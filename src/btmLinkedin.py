@@ -60,82 +60,158 @@ colorama.init()
 
 class BenthamLINKEDIN:
 	def get_linkedin_cookies_function(self):
-		self.display_message("Trying to get linkedin cookies...")
-		username = self.input_linkedin_username.value
-		password = self.input_linkedin_password.value 
-		browser_path = "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe"
-		driver_path = os.path.normpath(os.path.join(os.getcwd(), "drivers/chromedriver-win64/chromedriver.exe"))
-		#launch a browser with linkedin login page
-		chrome_options = Options()
-		chrome_options.add_argument("--window-size=1920,1080")
-		chrome_options.add_argument("--disable-gpu")
-		if ("BrowserHeadless" in self.user_data) and (self.user_data["BrowserHeadless"]==True):
-			chrome_options.add_argument("--headless")
-
-		if ("BrowserExecutable" in self.user_data) and ("BrowserDifferent" in self.user_data):
-			#replace the browser in driver settings
-			if self.user_data["BrowserDifferent"]==True:	
-				chrome_options.binary_location = self.user_data["BrowserExecutable"]
-				self.call_from_thread(self.display_message, f"Browser executable replaced : {self.user_data["BrowserExecutable"]}")
-		#chrome_options.binary_location = browser_path
-		
-		#service = Service(driver_path)
-		#chrome_options.add_argument("--disable-gpu")
-		#chrome_options.add_argument("--window-size=1920,1080")
-		#GET THE DRIVER FOR CHROMIUM
-		driver_path = os.path.normpath(os.path.join(os.getcwd(), "drivers/chromedriver-win64/chromedriver.exe"))
-		if os.path.isfile(driver_path)==True:
-			self.call_from_thread(self.display_message, "Web browser driver found...", "notification")
-			service = Service(driver_path)
-			self.driver_linkedin_scrapping = webdriver.Chrome(options = chrome_options, service=service)
-		else:
-			self.call_from_thread(self.display_message, "Impossible to find Web browser drivers", "error")
-			self.driver_linkedin_scrapping = webdriver.Chrome(options = chrome_options)
-		
-		#driver = webdriver.Chrome(options=chrome_options, service=service)
-		#driver = webdriver.Chrome(options=chrome_options)
-		driver.get("https://linkedin.com/login")
-		#enter informations
-		
-
-		username_input = driver.find_element(By.ID, "username")
-		password_input = driver.find_element(By.ID, "password")
-		username_input.send_keys(username)
-		password_input.send_keys(password)
-		#find login button
-		login_button = driver.find_element(By.CSS_SELECTOR, ".btn__primary--large.from__button--floating")
-		login_button.click()
-		#check for password error
 		try:
-			WebDriverWait(driver,3).until(
-				EC.presence_of_element_located((By.ID, "error-for-password"))
-			)
-			self.display_message("Wrong password", "error")
-			self.display_message("Impossible to get linkedin cookies from account", "error")
-			#self.console.print("Wrong password", style="error")
-			#self.console.print("Impossible to get linkedin cookies from account", style="error")
-			return False
-		except:
-			#self.console.print("Connected to linkedin account...", style="success")
-			self.display_message("Connected to linkedin account...", "notification")
-			#try to get cookies from the linkedin page
-			linkedin_cookies = driver.get_cookies()
-			#display linkedin cookies
-			#save linkedin cookies
-			
-			try:
-				with open(os.path.join(os.getcwd(), "data/linkedin_cookies.json"), "w") as cookie_file:
-					json.dump(linkedin_cookies, cookie_file, indent=4)
-				self.user_data["LinkedinCookies"] = linkedin_cookies
-			except Exception as e:
-				#self.console.print("Impossible to save linkedin cookies in file\n%s"%traceback.format_exc(), style="error")
-				self.display_message("Impossible to save linkedin cookies in file", "error")
-				self.display_message(traceback.format_exc(), "error", False)
-				return False
+			self.app.call_from_thread(self.app.display_message, "Trying to get linkedin cookies...")
+			#username = self.input_linkedin_username.value
+			#password = self.input_linkedin_password.value 
+
+			#launch a browser with linkedin login page
+			chrome_options = Options()
+			chrome_options.add_argument("--window-size=1920,1080")
+			chrome_options.add_argument("--disable-gpu")
+			chrome_options.add_argument("--no-sandbox")
+			chrome_options.add_argument("--disable-dev-shm-usage")
+			#chrome_options.add_argument("--disable-logging")
+			#chrome_options.add_argument("--log-level=3")
+			#chrome_options.add_argument("--silent")
+
+			"""
+			if ("BrowserHeadless" in self.user_data) and (self.user_data["BrowserHeadless"]==True):
+				chrome_options.add_argument("--headless")
+			"""
+			if ("BrowserExecutable" in self.app.user_data) and ("BrowserDifferent" in self.app.user_data):
+				#replace the browser in driver settings
+				if self.app.user_data["BrowserDifferent"]==True:	
+					chrome_options.binary_location = self.app.user_data["BrowserExecutable"]
+					#self.call_from_thread(self.display_message, f"Browser executable replaced : {self.user_data["BrowserExecutable"]}")
+					self.app.call_from_thread(self.app.display_message, f"Browser executable replaced : {self.app.user_data["BrowserExecutable"]}")
+					#chrome_options.binary_location = browser_path
+					
+
+					#GET THE DRIVER FOR CHROMIUM
+					driver_path = os.path.normpath(os.path.join(os.getcwd(), "drivers/chromedriver-win64/chromedriver.exe"))
+					if os.path.isfile(driver_path)==True:
+						#self.call_from_thread(self.display_message, "Web browser driver found...", "notification")
+						self.app.call_from_thread(self.app.display_message, "Web browser driver found...","notification")
+						service = Service(driver_path)
+						driver = webdriver.Chrome(options = chrome_options, service=service)
+					else:
+						#self.call_from_thread(self.display_message, "Impossible to find Web browser drivers", "error")
+						self.app.call_from_thread(self.app.display_message, "Impossible to find web browser driver", "error")
+						driver = webdriver.Chrome(options = chrome_options)
+				else:
+					driver = webdriver.Chrome(options = chrome_options)
 			else:
-				#self.console.print("Linkedin cookies saved successfully", style="success")
-				self.display_message("Linkedin cookies saved successfully", "success")
-				return True
+				driver = webdriver.Chrome(options = chrome_options)
+
+			#driver = webdriver.Chrome(options=chrome_options, service=service)
+			#driver = webdriver.Chrome(options=chrome_options)
+			driver.get("https://linkedin.com/login")
+
+			clicked=False
+			for i in range(1500):
+				#self.app.call_from_thread(self.app.display_message, f"value : {self.login_done}")
+				if self.login_done == None:
+					self.app.call_from_thread(self.app.display_message, "Linkedin login canceled", "notification")
+					return False
+				if self.login_done==True:
+					#get cookies from driver
+					try:
+						linkedin_cookies = driver.get_cookies()
+						#display linkedin cookies
+						#save linkedin cookies
+						
+						try:
+							with open(os.path.join(os.getcwd(), "data/linkedin_cookies.json"), "w") as cookie_file:
+								json.dump(linkedin_cookies, cookie_file, indent=4)
+							self.app.user_data["LinkedinCookies"] = linkedin_cookies
+							self.app.save_user_data_function()
+							self.app.call_from_thread(self.app.display_message, "LINKEDIN COOKIES SAVED", "success")
+							return True
+						except Exception as e:
+							#self.console.print("Impossible to save linkedin cookies in file\n%s"%traceback.format_exc(), style="error")
+							self.app.call_from_thread(self.app.display_message, "Impossible to save linkedin cookies in file", "error")
+							self.app.call_from_thread(self.app.display_message, traceback.format_exc(), "error", False)
+							return False
+					except Exception as e:
+						self.app.call_from_thread(self.app.display_message, f"Impossible to get cookies from driver\n{traceback.format_exc()}", "error")
+						return False
+
+					clicked=True
+					break
+
+				sleep(1)
+
+			self.app.call_from_thread(self.app.display_message, f"Login time limit has been reached", "error")
+			return False
+			#enter informations
+			
+			"""
+			username_input = driver.find_element(By.ID, "username")
+			password_input = driver.find_element(By.ID, "password")
+			username_input.send_keys(username)
+			password_input.send_keys(password)
+			#find login button
+			login_button = driver.find_element(By.CSS_SELECTOR, ".btn__primary--large.from__button--floating")
+			login_button.click()
+			#check for password error
+			try:
+				WebDriverWait(driver,3).until(
+					EC.presence_of_element_located((By.ID, "error-for-password"))
+				)
+				self.display_message("Wrong password", "error")
+				self.display_message("Impossible to get linkedin cookies from account", "error")
+				#self.console.print("Wrong password", style="error")
+				#self.console.print("Impossible to get linkedin cookies from account", style="error")
+				return False
+			except:
+				#self.console.print("Connected to linkedin account...", style="success")
+				self.display_message("Connected to linkedin account...", "notification")
+				#try to get cookies from the linkedin page
+				linkedin_cookies = driver.get_cookies()
+				#display linkedin cookies
+				#save linkedin cookies
+				
+				try:
+					with open(os.path.join(os.getcwd(), "data/linkedin_cookies.json"), "w") as cookie_file:
+						json.dump(linkedin_cookies, cookie_file, indent=4)
+					self.user_data["LinkedinCookies"] = linkedin_cookies
+				except Exception as e:
+					#self.console.print("Impossible to save linkedin cookies in file\n%s"%traceback.format_exc(), style="error")
+					self.display_message("Impossible to save linkedin cookies in file", "error")
+					self.display_message(traceback.format_exc(), "error", False)
+					return False
+				else:
+					#self.console.print("Linkedin cookies saved successfully", style="success")
+					self.display_message("Linkedin cookies saved successfully", "success")
+					return True
+			"""
+			#print(colored("PRESS <ENTER> WHEN YOU ARE CONNECTED TO YOUR LINKEDIN ACCOUNT TO SAVE COOKIES", "red"))
+			#os.system("pause")
+
+			"""
+			try:
+				linkedin_cookies = driver.get_cookies()
+				#display linkedin cookies
+				#save linkedin cookies
+				
+				try:
+					with open(os.path.join(os.getcwd(), "data/linkedin_cookies.json"), "w") as cookie_file:
+						json.dump(linkedin_cookies, cookie_file, indent=4)
+					self.user_data["LinkedinCookies"] = linkedin_cookies
+					self.display_message("LINKEDIN COOKIES SAVED", "success")
+				except Exception as e:
+					#self.console.print("Impossible to save linkedin cookies in file\n%s"%traceback.format_exc(), style="error")
+					self.display_message("Impossible to save linkedin cookies in file", "error")
+					self.display_message(traceback.format_exc(), "error", False)
+					return False
+			except Exception as e:
+				self.display_message(f"Impossible to get cookies from driver\n{traceback.format_exc()}", "error")
+				return False
+			"""
+		except Exception as e:
+			self.app.call_from_thread(self.app.display_message, f"Error happened during thread\n{traceback.format_exc()}", "error")
+
 
 	def thread_linkedin_scrapper(self):
 		try:

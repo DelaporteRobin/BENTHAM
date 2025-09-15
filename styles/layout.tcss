@@ -29,6 +29,45 @@ Button {
 Horizontal, VerticalScroll, Vertical {
 	height:auto;
 }
+ModalScreen {
+	align:center middle;
+	VerticalScroll, Vertical {
+		height:1fr;
+		align: center top;
+		text-align: center;
+		max-width:50%;
+
+		padding-top:20;
+		padding-right:5;
+		padding-left:5;
+
+	}
+	FigletWidget {
+		width:1fr;
+		align:center middle;
+		text-align:center;
+	}
+	Label {
+		text-align:center;
+		width:1fr;
+		color: $foreground;
+		margin-top:2;
+	}
+	Button {
+		padding-top:1;
+		padding-bottom:1;
+	}
+	#modal_askcookies_button_validate {
+		background:$success-darken-2;
+		border-bottom:thick $success-darken-3;
+		border-top: thick $success-darken-1;
+	}
+	#modal_askcookies_button_cancel {
+		background: $error;
+		border-bottom:thick $error-darken-1;
+		border-top: thick $error-lighten-1;
+	}
+}
 
 
 /*LAYOUT MAIN CONTAINERS*/

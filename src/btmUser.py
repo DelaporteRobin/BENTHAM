@@ -23,15 +23,26 @@ colorama.init()
 
 class BenthamUSER:
 	def save_user_data_function(self):
-		self.display_message("Trying to save user data", "notification")
 		try:
-			with open("data/userData.json", "w", encoding="utf-8") as save_file:
-				json.dump(self.user_data, save_file, indent=4)
-		except Exception as e:
-			self.display_message("Impossible to save user data", "error")
-			self.display_message(traceback.format_exc(), "error")
-		else:
-			self.display_message("User data updated...", "success")
+			self.display_message("Trying to save user data", "notification")
+			try:
+				with open("data/userData.json", "w", encoding="utf-8") as save_file:
+					json.dump(self.user_data, save_file, indent=4)
+			except Exception as e:
+				self.display_message("Impossible to save user data", "error")
+				self.display_message(traceback.format_exc(), "error")
+			else:
+				self.display_message("User data updated...", "success")
+		except RuntimeError:
+			self.app.call_from_thread(self.display_message, "Trying to save user data", "notification")
+			try:
+				with open("data/userData.json", "w", encoding="utf-8") as save_file:
+					json.dump(self.app.user_data, save_file, indent=4)
+			except Exception as e:
+				self.app.call_from_thread(self.display_message, "Impossible to save user data", "error")
+				self.app.call_from_thread(self.display_message, traceback.format_exc(), "error")
+			else:
+				self.app.call_from_thread(self.display_message, "User data updated...", "success")
 
 	def load_user_data_function(self):
 		self.display_message("Trying to load user data", "notification")

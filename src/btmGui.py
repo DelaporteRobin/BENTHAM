@@ -114,12 +114,14 @@ class BenthamGUI:
 				return
 			self.input_user_skills.value = user_skill_list
 
+		"""
 		if ("LinkedinMail" in self.user_data) and ("LinkedinPassword" in self.user_data):
 			self.display_message("Personnal linkedin informations detected in user data", "message")
 			self.input_linkedin_username.value = self.user_data["LinkedinMail"]
 			self.input_linkedin_password.value = self.user_data["LinkedinPassword"]
 		else:
 			self.display_message("Personnal linkedin informations missing in user data", "error")
+		"""
 		
 		if ("KeywordRequired" in self.user_data):
 			#format data for input field
