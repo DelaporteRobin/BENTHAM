@@ -385,8 +385,12 @@ you can go read the documentation on Notion
 		
 		self.lock_log_file.acquire()
 		#write log line
-		with open("data/btmLog.log", "a", encoding="utf-8") as log_file:
-			log_file.write("%s\n"%str(format_msg))
+		try:
+			os.makedirs(os.path.normpath(os.path.join(os.getcwd(), "data")), exist_ok=True)
+			with open("data/btmLog.log", "a", encoding="utf-8") as log_file:
+				log_file.write("%s\n"%str(format_msg))
+		except:
+			pass
 		#release the lock
 		self.lock_log_file.release()
 		
