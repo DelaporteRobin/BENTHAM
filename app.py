@@ -34,6 +34,7 @@ from typing import Any
 from rich.console import Console
 from rich.theme import Theme
 from rich.traceback import install
+from time import sleep
 
 #import external modules
 from src.btmLinkedin import BenthamLINKEDIN

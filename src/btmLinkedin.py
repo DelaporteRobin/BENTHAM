@@ -446,16 +446,7 @@ class BenthamLINKEDIN:
 
 				self.call_from_thread(self.display_message, f"\nLinkedin post content\n{post_text}", "message", False)
 				#CHECK FOR CONTENT IN POST
-				if self.user_data["LinkedinUseAI"]==False:
-					#check if keyword are in the post text
-					if self.check_post_content_function(post_text)==False:
-						self.call_from_thread(self.display_message, "Post skipped", "notification")
-						continue
-					elif self.check_post_content_function(post_text)==True:
-						self.call_from_thread(self.display_message, "Keyword detected in post", "success")
-					else:
-						self.call_from_thread(self.display_message, "Impossible to check for keywords in post", "warning")
-				else:
+				if ("LinkedinUseAI" in self.user_data) and (self.user_data["LinkedinUseAI"]==True):
 					#PROMPT THE GROQ CLASS
 					try:
 						callinggroq = BenthamGroq(api_key = self.user_data["GroqAPIKey"], post_content=post_text, user_skills = self.user_data["LinkedinUserSkills"], user_location = self.user_data["LinkedinUserLocation"], user_skills_excluded = self.user_data["LinkedinUserSkillsExclude"])
@@ -503,6 +494,15 @@ class BenthamLINKEDIN:
 								continue
 							else:
 								self.call_from_thread(self.display_message, "Matching post detected", "success")
+				else:
+					#check if keyword are in the post text
+					if self.check_post_content_function(post_text)==False:
+						self.call_from_thread(self.display_message, "Post skipped", "notification")
+						continue
+					elif self.check_post_content_function(post_text)==True:
+						self.call_from_thread(self.display_message, "Keyword detected in post", "success")
+					else:
+						self.call_from_thread(self.display_message, "Impossible to check for keywords in post", "warning")
 				#GET SHARED POST CONTENT
 				post_shared = post.find_elements(By.CSS_SELECTOR, "div.feed-shared-update-v2__update-content-wrapper")
 				post_shared_text = None
