@@ -85,8 +85,10 @@ class BenthamGUI:
 				self.display_message(f"Theme applied successfully → {self.user_data["ApplicationTheme"]}", "green")
 		self.display_message("Updating informations in Lobby", "notification")
 		#check for user credentials in user settings
+		"""
 		if "BrowserHeadless" in self.user_data:
 			self.checkbox_headless_browser.value = self.user_data["BrowserHeadless"]
+		"""
 		if "BrowserDifferent" in self.user_data:
 			self.checkbox_custom_browser.value = self.user_data["BrowserDifferent"]
 		if "BrowserExecutable" in self.user_data:

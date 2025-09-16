@@ -102,7 +102,6 @@ class Modal_Bentham_AskCookies(ModalScreen, BenthamLINKEDIN, BenthamUTILITY):
 		self.app.pop_screen()
 		self.app.uninstall_screen("Modal_Bentham_AskCookies")
 
-
 	def on_resize(self) -> None:
 		"""Handle the resize event."""
 		self.modal_figlet_cookies.refresh_size()
@@ -244,10 +243,10 @@ you can go read the documentation on Notion
 
 					with Horizontal(id = "horizontal_browser_settings"):
 						self.checkbox_custom_browser = Checkbox("Use a custom browser", id="checkbox_custom_browser", value=False)
-						self.checkbox_headless_browser = Checkbox("Headless browser", id="checkbox_headless_browser", value=False)
+						#self.checkbox_headless_browser = Checkbox("Headless browser", id="checkbox_headless_browser", value=False)
 						self.checkbox_startup_mode = Checkbox("Startup mode", id="checkbox_startup_mode", value=False)
 
-						yield self.checkbox_headless_browser
+						#yield self.checkbox_headless_browser
 						yield self.checkbox_custom_browser
 						yield self.checkbox_startup_mode
 

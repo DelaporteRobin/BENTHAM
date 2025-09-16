@@ -235,8 +235,10 @@ class BenthamLINKEDIN:
 				#DEFAULT BROWSER OPTIONS
 				chrome_options.add_argument("--window-size=1920,1080")
 				chrome_options.add_argument("--disable-gpu")
+				"""
 				if ("BrowserHeadless" in self.user_data) and (self.user_data["BrowserHeadless"]==True):
 					chrome_options.add_argument("--headless")
+				"""
 				if ("BrowserExecutable" in self.user_data) and ("BrowserDifferent" in self.user_data):
 					#replace the browser in driver settings
 					if self.user_data["BrowserDifferent"]==True:	
@@ -613,12 +615,17 @@ class BenthamLINKEDIN:
 
 	def get_post_link_function(self,post):
 		try:
+			"""
+			div to click
+			feed-shared-control-menu__content artdeco-dropdown__content artdeco-dropdown--is-dropdown-element artdeco-dropdown__content--has-arrow artdeco-dropdown__content--arrow-right artdeco-dropdown__content--justification-right artdeco-dropdown__content--placement-bottom ember-view
+			"""
 			#clean the content of the copy 
 			pyperclip.copy("nothing copied")
 			post_button = WebDriverWait(post, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'button.feed-shared-control-menu__trigger')))
 			ActionChains(self.driver_linkedin_scrapping).move_to_element(post_button).perform()
 			WebDriverWait(self.driver_linkedin_scrapping,5).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'button.feed-shared-control-menu__trigger')))
 			post_button.click()
+			sleep(1)
 			post_div = post.find_element(By.CSS_SELECTOR, 'div.feed-shared-control-menu__content')
 			menu_option = WebDriverWait(self.driver_linkedin_scrapping, 8).until(EC.presence_of_all_elements_located((By.XPATH, "//div[contains(@class, 'feed-shared-control-menu__content')]//div[@role='button']")))			
 			menu_option[1].click()
